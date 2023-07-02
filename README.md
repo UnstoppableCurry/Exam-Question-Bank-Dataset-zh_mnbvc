@@ -12,6 +12,9 @@
 5.有答案的试卷进行切分-对齐
 
 # 代码使用
+0.环境安装
+   
+    pip install pypandoc  #centos系统要提前安装好pandoc，pypandoc这个库只是一个封装调用api
 
 1.centos 系统下,解压xxx.zip 数据集， 解压含有中文字符的文件会乱码。请使用zip2.py
     
