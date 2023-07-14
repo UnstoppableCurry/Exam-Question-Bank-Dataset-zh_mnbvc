@@ -1,0 +1,6 @@
+data/ex*
+data/not*
+data/test*
+.venv
+dataset
+TextClassifier.pkl
