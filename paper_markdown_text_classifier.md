@@ -4,7 +4,6 @@
 
 代码主要使用了以下Python库：
 
-- sklearn: 用于模型训练和预测
 - joblib: 用于模型的保存和加载
 - re: 用于正则表达式操作，移除或替换字符串中的特定模式
 - jieba: 中文分词库，用于将句子分解为单个词语
@@ -20,7 +19,7 @@
 
 - 移除图片字符串（`remove_image_string`函数）
 - 移除噪声字符（`remove_noise_character`函数）
-- 对文本进行分词（`cut_words`函数）
+- 对文本进行分词（`chinese_tokenizer`函数）
 
 ### 模型预测
 
@@ -46,17 +45,17 @@ usage: paper_markdown_text_classifier.py [-h] [--folder_path FOLDER_PATH] [--sav
                                          [--other_file_save_folder OTHER_FILE_SAVE_FOLDER]
 
 options:
-  --folder_path FOLDER_PATH
+  --folder_path FOLDER_PATH，
                         需要检查的文件目录
 
-  --save_folder SAVE_FOLDER
-                        保存文件的目录
+  --save_folder SAVE_FOLDER，
+                        保存文件的目录，
                         默认：FOLDER_PATH相对路径的examination_paper
 
-  --save_other_file SAVE_OTHER_FILE
-                        是否保存非试卷的其他文件 0 or 1
+  --save_other_file SAVE_OTHER_FILE，
+                        是否保存非试卷的其他文件 0 or 1，
                         默认：0
 
-  --other_file_save_folder OTHER_FILE_SAVE_FOLDER
-                        不是试卷的其他文件保存文件的目录
+  --other_file_save_folder OTHER_FILE_SAVE_FOLDER，
+                        不是试卷的其他文件保存文件的目录，
                         默认：FOLDER_PATH相对路径的not_examination_paper

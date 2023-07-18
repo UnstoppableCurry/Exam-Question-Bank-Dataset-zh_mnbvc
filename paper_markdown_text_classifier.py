@@ -1,11 +1,8 @@
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import make_pipeline
 import joblib
 import re
 import jieba
 import argparse
-import os
+import os   
 import glob
 from pathlib import Path
 
