@@ -35,7 +35,7 @@
   3.1 统计试卷词频分布
   3.2 通过获得词频分布，对文档进行过过滤
 
-    - 一个实例 [paper_markdown_text_classifier](./paper_markdown_text_classifier.md)
+一个实例 [paper_markdown_text_classifier](./paper_markdown_text_classifier.md)
                      
     python 统计是否为试卷.py  #打印输出词频获得分布
     
