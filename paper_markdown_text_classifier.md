@@ -29,7 +29,7 @@
 
 ### 命令行参数解析
 
-该代码还提供了命令行参数解析功能，通过`argparse`库实现。命令行参数主要包括输入文件、输出文件和模型文件的路径。
+该代码还提供了命令行参数解析功能，通过`argparse`库实现。命令行参数主要包括输入目录、输出目录和模型文件的路径。
 
 ## 使用方式
 
@@ -48,12 +48,15 @@ usage: paper_markdown_text_classifier.py [-h] [--folder_path FOLDER_PATH] [--sav
 options:
   --folder_path FOLDER_PATH
                         需要检查的文件目录
+
   --save_folder SAVE_FOLDER
                         保存文件的目录
                         默认：FOLDER_PATH相对路径的examination_paper
+
   --save_other_file SAVE_OTHER_FILE
                         是否保存非试卷的其他文件 0 or 1
                         默认：0
+
   --other_file_save_folder OTHER_FILE_SAVE_FOLDER
                         不是试卷的其他文件保存文件的目录
                         默认：FOLDER_PATH相对路径的not_examination_paper
