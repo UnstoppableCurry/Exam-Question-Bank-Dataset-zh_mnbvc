@@ -275,7 +275,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', type=str, required=True, help="输入目录")
     parser.add_argument('--output_dir', type=str, required=True, help="输出目录")
-    parser.add_argument('--model_url', default="https://huggingface.co/datasets/ranWang/test_paper_textClassifier/blob/main/TextClassifier-13m.pkl", type=str, help='模型下载链接')
+    parser.add_argument('--model_url', default="https://huggingface.co/datasets/ranWang/test_paper_textClassifier/resolve/main/TextClassifier-13m.pkl", type=str, help='模型下载链接')
     parser.add_argument('--threshold', default=0.5, type=float, help='预测阈值')
     
     args = parser.parse_args()
