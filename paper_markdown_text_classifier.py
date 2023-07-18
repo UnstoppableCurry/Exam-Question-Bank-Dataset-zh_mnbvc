@@ -4,9 +4,11 @@ import jieba
 import argparse
 import os   
 import glob
-from pathlib import Path
 import requests
 from tqdm import tqdm
+import pypandoc
+import shutil
+from docx import Document
 
 
 def remove_image_string(input_string):
@@ -153,7 +155,7 @@ def get_file_content(file_local):
         return f.read()
 
 
-def download_model(*,model_name, download_url):
+def download_model(*, model_name, download_url):
     """
     从指定的URL下载模型并使用给定的模型名称保存。
 
@@ -206,70 +208,84 @@ def download_model(*,model_name, download_url):
         raise
 
 
+def extract_text_from_docx(file_path):
+    """
+    解析一个docx中的问题，没有图片标签等噪点
+    """
+    doc = Document(file_path)
+    text = ''
+    for paragraph in doc.paragraphs:
+        text += paragraph.text + ' '
+    return text
+
+def detect_language(text):
+    """
+    解析一段文字是否为中文
+    """
+    chinese_count = 0
+    english_count = 0
+    
+    for char in text:
+        if '\u4e00' <= char <= '\u9fff':
+            chinese_count += 1
+        elif 'a' <= char.lower() <= 'z':
+            english_count += 1
+            
+    if chinese_count > english_count:
+        return 'Chinese'
+    elif english_count > chinese_count:
+        return 'English'
+    else:
+        return 'Unknown'
 
 
-if __name__ == '__main__':
+def move_files(input_dir, output_dir, threshold, model):
+    if os.path.exists(input_dir) == False:
+        raise ValueError('输入目录不存在')
+    if os.path.abspath(input_dir) == os.path.abspath(output_dir):
+        raise ValueError('输入目录和输出目录不能相同')
+
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # 遍历一个文件夹下所有docx文件
+    for relative_file in tqdm(glob.glob(input_dir + '/' + "*.docx")):
+        target_file = os.path.join(output_dir, relative_file.split("/")[-1])
+        if os.path.exists(target_file):
+            continue
+
+        try:
+            # 这个库大文件偶尔会报错
+            docx_text = extract_text_from_docx(relative_file)
+            # 如果不是中文
+            if detect_language(docx_text):
+                continue
+        except:
+            continue
+
+        # 一个和多个文件速度没差
+        predict = predict_with_threshold(model, [one_text_pre_process(docx_text)], threshold)[0]
+
+        # 0/1 => False/True
+        if predict:
+            shutil.copy(relative_file, target_file)
+   
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--folder_path', type=str, help='需要检查的文件目录')
-    parser.add_argument('--save_folder', default=None, type=str, help='保存文件的目录')
-    parser.add_argument('--save_other_file', default=0, type=int, help='是否保存非试卷的其他文件')
-    parser.add_argument('--other_file_save_folder', default=None, type=str, help='不是试卷的其他文件保存文件的目录')
+    parser.add_argument('--input_dir', type=str, required=True, help="输入目录")
+    parser.add_argument('--output_dir', type=str, required=True, help="输出目录")
     parser.add_argument('--model_url', default="https://huggingface.co/datasets/ranWang/test_paper_textClassifier/blob/main/TextClassifier-13m.pkl", type=str, help='模型下载链接')
     parser.add_argument('--threshold', default=0.5, type=float, help='预测阈值')
     
     args = parser.parse_args()
 
-    folder_path = args.folder_path
-    save_folder = args.save_folder
-    other_file_save_folder = args.other_file_save_folder
-    is_save_other_file = args.save_other_file
-    model_url = args.model_url
-    threshold = args.threshold
-
-    if not folder_path:
-        raise ValueError("--folder_path argument need input")
-
-    if not save_folder:
-        save_folder = change_last_folder_name(folder_path, "examination_paper")
-        
-    Path(save_folder).mkdir()
-        
-    if is_save_other_file and not other_file_save_folder:
-        other_file_save_folder = change_last_folder_name(folder_path, "not_examination_paper")
-        Path(other_file_save_folder).mkdir()
-
     model_file_name = "TextClassifier.pkl"
-
-    download_model(model_name=model_file_name, download_url=model_url)
+    download_model(model_name=model_file_name, download_url=args.model_url)
     model = joblib.load(model_file_name)
 
-
-    raw_text_data_list = []
-    file_name_list = []
-
-    for file_local in glob.glob(folder_path + '/' + "*.md"):
-        file_content = get_file_content(file_local)
-        raw_text_data_list.append(file_content)
-        file_name_list.append(file_local.split('/')[-1])
+    move_files(args.input_dir, args.output_dir, args.threshold, model)
 
 
-    text_data_list = pre_process(raw_text_data_list)
-    predictions = predict_with_threshold(model, text_data_list, threshold)
-    
-    for index, prediction in enumerate(predictions):
-        # 如果选择不保存其他文件，并且预测文件类型结果为"其他"
-        if not prediction and not is_save_other_file:
-            continue
 
-        file_save_folder = save_folder
-
-        if not prediction and is_save_other_file:
-            file_save_folder = other_file_save_folder
-
-        save_local = os.path.join(file_save_folder, file_name_list[index])
-
-        with open(save_local, "w") as f:
-            f.write(raw_text_data_list[index])
-        
             
 
