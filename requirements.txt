@@ -1,4 +1,3 @@
 scikit-learn
 jieba
-pypandoc
 python-docx

@@ -6,7 +6,6 @@ import os
 import glob
 import requests
 from tqdm import tqdm
-import pypandoc
 import shutil
 from docx import Document
 
@@ -210,7 +209,7 @@ def download_model(*, model_name, download_url):
 
 def extract_text_from_docx(file_path):
     """
-    解析一个docx中的问题，没有图片标签等噪点
+    解析一个docx中的文字，没有图片标签等噪点
     """
     doc = Document(file_path)
     text = ''
@@ -250,6 +249,10 @@ def move_files(input_dir, output_dir, threshold, model):
     
     # 遍历一个文件夹下所有docx文件
     for relative_file in tqdm(glob.glob(input_dir + '/' + "*.docx")):
+        # widnwos下的目录和ubuntu不一样
+        if "\\" in relative_file:
+            relative_file = relative_file.replace("\\","/")
+
         target_file = os.path.join(output_dir, relative_file.split("/")[-1])
         if os.path.exists(target_file):
             continue
@@ -258,7 +261,7 @@ def move_files(input_dir, output_dir, threshold, model):
             # 这个库大文件偶尔会报错
             docx_text = extract_text_from_docx(relative_file)
             # 如果不是中文
-            if detect_language(docx_text):
+            if detect_language(docx_text) != "Chinese":
                 continue
         except:
             continue

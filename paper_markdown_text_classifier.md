@@ -41,13 +41,12 @@
 python paper_markdown_text_classifier.py --input_dir='./docx' --output_dir='./examination_paper'
 ```
 
-这会使用`./markdown`目录中所有markdown文件作为输入数据，`./examination_paper_markdone`作为输出目录，并且这个目录中只存在预测是"试卷"类型的md文档。
-
-** folder_path同级目录下不要存在"examination_paper"和"not_examination_paper”文件夹
+这会使用`./docx`目录中所有markdown文件作为输入数据，`./examination_paper`作为输出目录，并且这个目录中只存在预测是"试卷"类型的文件
 
 
-usage: paper_markdown_text_classifier.py [-h] [--folder_path FOLDER_PATH] [--save_folder SAVE_FOLDER] [--save_other_file SAVE_OTHER_FILE]
-                                         [--other_file_save_folder OTHER_FILE_SAVE_FOLDER]
+
+usage: paper_markdown_text_classifier.py [-h] [--input_dir INPUT_DIR] [--output_dir OUTPUT_DIR] [--model_url MODEL_URL]
+                                         [--threshold THRESHOLD]
 
 options:
   --input_dir INPUT_DIR
