@@ -11,6 +11,8 @@
 - os 和 glob: 用于处理文件和文件路径
 - pathlib: 用于创建和管理文件路径
 - requests: 下载模型
+- pypandoc
+- python-docx
 
 ## 主要功能
 
@@ -36,7 +38,7 @@
 在命令行中运行该代码，并按照参数提示输入相应的文件路径。例如：
 
 ```
-python paper_markdown_text_classifier.py --folder_path='./markdown' --save_folder='./examination_paper_markdone'
+python paper_markdown_text_classifier.py --input_dir='./docx' --output_dir='./examination_paper'
 ```
 
 这会使用`./markdown`目录中所有markdown文件作为输入数据，`./examination_paper_markdone`作为输出目录，并且这个目录中只存在预测是"试卷"类型的md文档。
@@ -48,25 +50,12 @@ usage: paper_markdown_text_classifier.py [-h] [--folder_path FOLDER_PATH] [--sav
                                          [--other_file_save_folder OTHER_FILE_SAVE_FOLDER]
 
 options:
-  --folder_path FOLDER_PATH，
-                        需要检查的文件目录
-
-  --save_folder SAVE_FOLDER，
-                        保存文件的目录，
-                        默认：FOLDER_PATH相对路径的examination_paper
-
-  --save_other_file SAVE_OTHER_FILE，
-                        是否保存非试卷的其他文件 0 or 1，
-                        默认：0
-
-  --other_file_save_folder OTHER_FILE_SAVE_FOLDER，
-                        不是试卷的其他文件保存文件的目录，
-                        默认：FOLDER_PATH相对路径的not_examination_paper
-
+  --input_dir INPUT_DIR
+                        输入目录
+  --output_dir OUTPUT_DIR
+                        输出目录
   --model_url MODEL_URL
-                        模型下载链接,
-                        默认:"https://huggingface.co/datasets/ranWang/test_paper_textClassifier/blob/main/TextClassifier-13m.pkl"
-
+                        模型下载链接
   --threshold THRESHOLD
                         预测阈值
                         默认0.5（调高效果也一样）

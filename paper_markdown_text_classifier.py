@@ -218,6 +218,7 @@ def extract_text_from_docx(file_path):
         text += paragraph.text + ' '
     return text
 
+
 def detect_language(text):
     """
     解析一段文字是否为中文
