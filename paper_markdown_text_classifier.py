@@ -231,7 +231,8 @@ if __name__ == '__main__':
 
     if not save_folder:
         save_folder = change_last_folder_name(folder_path, "examination_paper")
-        Path(save_folder).mkdir()
+        
+    Path(save_folder).mkdir()
         
     if is_save_other_file and not other_file_save_folder:
         other_file_save_folder = change_last_folder_name(folder_path, "not_examination_paper")
