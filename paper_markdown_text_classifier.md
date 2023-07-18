@@ -10,6 +10,7 @@
 - argparse: 用于从命令行解析参数
 - os 和 glob: 用于处理文件和文件路径
 - pathlib: 用于创建和管理文件路径
+- requests: 下载模型
 
 ## 主要功能
 
@@ -40,6 +41,8 @@ python paper_markdown_text_classifier.py --folder_path='./markdown' --save_folde
 
 这会使用`./markdown`目录中所有markdown文件作为输入数据，`./examination_paper_markdone`作为输出目录，并且这个目录中只存在预测是"试卷"类型的md文档。
 
+** folder_path同级目录下不要存在"examination_paper"和"not_examination_paper”文件夹
+
 
 usage: paper_markdown_text_classifier.py [-h] [--folder_path FOLDER_PATH] [--save_folder SAVE_FOLDER] [--save_other_file SAVE_OTHER_FILE]
                                          [--other_file_save_folder OTHER_FILE_SAVE_FOLDER]
@@ -59,3 +62,12 @@ options:
   --other_file_save_folder OTHER_FILE_SAVE_FOLDER，
                         不是试卷的其他文件保存文件的目录，
                         默认：FOLDER_PATH相对路径的not_examination_paper
+
+  --model_url MODEL_URL
+                        模型下载链接,
+                        默认:"https://huggingface.co/datasets/ranWang/test_paper_textClassifier/blob/main/TextClassifier-13m.pkl"
+
+  --threshold THRESHOLD
+                        预测阈值
+                        默认0.5（调高效果也一样）
+
