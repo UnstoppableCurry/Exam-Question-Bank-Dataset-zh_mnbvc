@@ -268,16 +268,15 @@ def move_files(input_dir, output_dir, threshold, model):
 
             if os.path.exists(target_file):
                 continue
-
-            Path(target_dir).mkdir(exist_ok=True)
    
             try:
                 # 存在一些无法解析的字符集的文件会报错
                 docx_text = extract_text_from_docx(file_local)
                 # 如果不是中文
                 if detect_language(docx_text) != "Chinese":
+                    print("1")
                     continue
-            except:
+            except: 
                 continue
 
             # 一个和多个文件速度没差
@@ -285,9 +284,10 @@ def move_files(input_dir, output_dir, threshold, model):
 
             # 0/1 => False/True
             if predict:
+                Path(target_dir).mkdir(exist_ok=True)
                 shutil.copy(file_local, target_file)
 
-            print(f"{file_local} success")
+            # print(f"{file_local} success")
    
 
 if __name__ == "__main__":
