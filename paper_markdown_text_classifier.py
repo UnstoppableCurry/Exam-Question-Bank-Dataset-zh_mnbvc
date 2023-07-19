@@ -8,7 +8,7 @@ import requests
 from tqdm import tqdm
 import shutil
 from docx import Document
-
+from pathlib import Path
 
 def remove_image_string(input_string):
     """
@@ -256,21 +256,24 @@ def move_files(input_dir, output_dir, threshold, model):
             
             if not file.endswith(file_pattern):
                 continue
-            
-            # 获取相对于输入目录的路径
-            relative_file = os.path.join(root, file)
-           
-            # widnwos下的目录和ubuntu不一样
-            if "\\" in relative_file:
-                relative_file = relative_file.replace("\\","/")
 
-            target_file = os.path.join(output_dir, relative_file.split("/")[-1])
+            file_locl = os.path.join(root, file)
+
+            # widnwos下的目录和ubuntu不一样
+            if "\\" in file_locl:
+                file_locl = file_locl.replace("\\","/")
+
+            target_dir = os.path.join(output_dir, os.path.relpath(root, input_dir))
+            target_file = os.path.join(target_dir, file_locl.split("/")[-1])
+
             if os.path.exists(target_file):
                 continue
 
+            Path(target_dir).mkdir(exist_ok=True)
+            print(target_file)
             try:
                 # 存在一些无法解析的字符集的文件会报错
-                docx_text = extract_text_from_docx(relative_file)
+                docx_text = extract_text_from_docx(file_locl)
                 # 如果不是中文
                 if detect_language(docx_text) != "Chinese":
                     continue
@@ -282,9 +285,9 @@ def move_files(input_dir, output_dir, threshold, model):
 
             # 0/1 => False/True
             if predict:
-                shutil.copy(relative_file, target_file)
+                shutil.copy(file_locl, target_file)
 
-            print(f"{relative_file} success")
+            # print(f"{file_locl} success")
    
 
 if __name__ == "__main__":
@@ -299,7 +302,7 @@ if __name__ == "__main__":
     model_file_name = "TextClassifier.pkl"
     download_model(model_name=model_file_name, download_url=args.model_url)
     model = joblib.load(model_file_name)
-    print(args.input_dir)
+    
     move_files(args.input_dir, args.output_dir, args.threshold, model)
 
 
