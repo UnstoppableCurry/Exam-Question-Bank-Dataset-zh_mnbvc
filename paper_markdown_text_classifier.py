@@ -248,7 +248,7 @@ def move_files(input_dir, output_dir, threshold, model):
     os.makedirs(output_dir, exist_ok=True)
     
     # 文件名后缀
-    file_pattern = ".docx"
+    file_pattern = ".doc"
 
     # 遍历一个文件夹下所有docx文件
     for root, _, files in os.walk(input_dir):
