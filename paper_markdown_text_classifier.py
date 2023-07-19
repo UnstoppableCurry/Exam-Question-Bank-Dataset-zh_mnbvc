@@ -247,31 +247,42 @@ def move_files(input_dir, output_dir, threshold, model):
 
     os.makedirs(output_dir, exist_ok=True)
     
+    # 文件名后缀
+    file_pattern = ".docx"
+
     # 遍历一个文件夹下所有docx文件
-    for relative_file in tqdm(glob.glob(input_dir + '/' + "*.docx")):
-        # widnwos下的目录和ubuntu不一样
-        if "\\" in relative_file:
-            relative_file = relative_file.replace("\\","/")
+    for root, _, files in (os.walk(input_dir)):
+        for file in tqdm(files):
 
-        target_file = os.path.join(output_dir, relative_file.split("/")[-1])
-        if os.path.exists(target_file):
-            continue
-
-        try:
-            # 这个库大文件偶尔会报错
-            docx_text = extract_text_from_docx(relative_file)
-            # 如果不是中文
-            if detect_language(docx_text) != "Chinese":
+            if not file.endswith(file_pattern):
                 continue
-        except:
-            continue
+            
+            # 获取相对于输入目录的路径
+            relative_file = os.path.join(root, file)
+           
+            # widnwos下的目录和ubuntu不一样
+            if "\\" in relative_file:
+                relative_file = relative_file.replace("\\","/")
 
-        # 一个和多个文件速度没差
-        predict = predict_with_threshold(model, [one_text_pre_process(docx_text)], threshold)[0]
+            target_file = os.path.join(output_dir, relative_file.split("/")[-1])
+            if os.path.exists(target_file):
+                continue
 
-        # 0/1 => False/True
-        if predict:
-            shutil.copy(relative_file, target_file)
+            try:
+                # 这个库大文件偶尔会报错/
+                docx_text = extract_text_from_docx(relative_file)
+                # 如果不是中文
+                if detect_language(docx_text) != "Chinese":
+                    continue
+            except:
+                continue
+
+            # 一个和多个文件速度没差
+            predict = predict_with_threshold(model, [one_text_pre_process(docx_text)], threshold)[0]
+
+            # 0/1 => False/True
+            if predict:
+                shutil.copy(relative_file, target_file)
    
 
 if __name__ == "__main__":
@@ -286,7 +297,7 @@ if __name__ == "__main__":
     model_file_name = "TextClassifier.pkl"
     download_model(model_name=model_file_name, download_url=args.model_url)
     model = joblib.load(model_file_name)
-
+    print(args.input_dir)
     move_files(args.input_dir, args.output_dir, args.threshold, model)
 
 
