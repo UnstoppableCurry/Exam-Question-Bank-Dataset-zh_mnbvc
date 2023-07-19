@@ -251,9 +251,9 @@ def move_files(input_dir, output_dir, threshold, model):
     file_pattern = ".docx"
 
     # 遍历一个文件夹下所有docx文件
-    for root, _, files in (os.walk(input_dir)):
-        for file in tqdm(files):
-
+    for root, _, files in os.walk(input_dir):
+        for file in files:
+            
             if not file.endswith(file_pattern):
                 continue
             
@@ -283,6 +283,8 @@ def move_files(input_dir, output_dir, threshold, model):
             # 0/1 => False/True
             if predict:
                 shutil.copy(relative_file, target_file)
+
+            print(f"{relative_file} success")
    
 
 if __name__ == "__main__":
