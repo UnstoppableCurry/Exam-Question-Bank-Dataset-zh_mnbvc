@@ -249,7 +249,7 @@ def move_files(input_dir, output_dir, threshold, model):
     
     # 文件名后缀
     file_pattern = ".docx"
-
+    
     # 遍历一个文件夹下所有docx文件
     for root, _, files in os.walk(input_dir):
         for file in files:
@@ -269,7 +269,7 @@ def move_files(input_dir, output_dir, threshold, model):
                 continue
 
             try:
-                # 这个库大文件偶尔会报错/
+                # 存在一些无法解析的字符集的文件会报错
                 docx_text = extract_text_from_docx(relative_file)
                 # 如果不是中文
                 if detect_language(docx_text) != "Chinese":
