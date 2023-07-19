@@ -284,7 +284,7 @@ def move_files(input_dir, output_dir, threshold, model):
 
             # 0/1 => False/True
             if predict:
-                Path(target_dir).mkdir(exist_ok=True)
+                Path(target_dir).mkdir(parents=True, exist_ok=True)
                 shutil.copy(file_local, target_file)
 
             # print(f"{file_local} success")
