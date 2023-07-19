@@ -274,7 +274,6 @@ def move_files(input_dir, output_dir, threshold, model):
                 docx_text = extract_text_from_docx(file_local)
                 # 如果不是中文
                 if detect_language(docx_text) != "Chinese":
-                    print("1")
                     continue
             except: 
                 continue
@@ -287,7 +286,7 @@ def move_files(input_dir, output_dir, threshold, model):
                 Path(target_dir).mkdir(parents=True, exist_ok=True)
                 shutil.copy(file_local, target_file)
 
-            # print(f"{file_local} success")
+            print(f"{file_local} success")
    
 
 if __name__ == "__main__":
