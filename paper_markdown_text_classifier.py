@@ -314,7 +314,7 @@ def move_files(input_dir, output_dir, threshold, model, just_by_file_name):
                 
                 # 标记一下通过文件名提取出来的docx
                 if predict:
-                    write_classification_by_file_name_log(file)
+                    write_classification_by_file_name_log(target_file)
             else:
                 # 一个和多个文件速度没差
                 predict = predict_with_threshold(model, [one_text_pre_process(text)], threshold)[0]
