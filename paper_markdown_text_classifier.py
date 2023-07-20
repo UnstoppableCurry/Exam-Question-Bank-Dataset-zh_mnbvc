@@ -319,7 +319,7 @@ def move_files(input_dir, output_dir, threshold, model, just_by_file_name):
                 # 一个和多个文件速度没差
                 predict = predict_with_threshold(model, [one_text_pre_process(text)], threshold)[0]
 
-            print(f"{file_local} a")
+            
             # 0/1 => False/True
             if predict:
                 Path(target_dir).mkdir(parents=True, exist_ok=True)
