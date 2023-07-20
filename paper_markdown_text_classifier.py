@@ -237,9 +237,21 @@ def detect_language(text):
         return 'English'
     else:
         return 'Unknown'
+    
+
+EXAMINATION_KEY_WORDS = ['考试', '试卷', '卷', '试题', '试']
 
 
-def move_files(input_dir, output_dir, threshold, model):
+def judge_examination_paper_by_file_name(file_name):
+    return any(key_word in file_name for key_word in EXAMINATION_KEY_WORDS)
+
+
+def write_classification_by_ile_name_log(file_name):
+    with open("file_name_classification.log", "a") as f:
+        f.write(f"{file_name}\n")
+
+
+def move_files(input_dir, output_dir, threshold, model, just_by_file_name):
     if os.path.exists(input_dir) == False:
         raise ValueError('输入目录不存在')
     if os.path.abspath(input_dir) == os.path.abspath(output_dir):
@@ -272,21 +284,30 @@ def move_files(input_dir, output_dir, threshold, model):
             try:
                 # 存在一些无法解析的字符集的文件会报错
                 docx_text = extract_text_from_docx(file_local)
+
                 # 如果不是中文
                 if detect_language(docx_text) != "Chinese":
                     continue
             except: 
                 continue
+            
+            # 如果选择"仅通过文件名"或者提取的文件内容字符数量小于100
+            if just_by_file_name or len(docx_text) < 100:
+                predict = judge_examination_paper_by_file_name(file)
+                # 标记一下通过文件名提取出来的docx
+                if predict:
+                    write_classification_by_ile_name_log(file)
+            else:
+                # 一个和多个文件速度没差
+                predict = predict_with_threshold(model, [one_text_pre_process(docx_text)], threshold)[0]
 
-            # 一个和多个文件速度没差
-            predict = predict_with_threshold(model, [one_text_pre_process(docx_text)], threshold)[0]
-
+            
             # 0/1 => False/True
             if predict:
                 Path(target_dir).mkdir(parents=True, exist_ok=True)
                 shutil.copy(file_local, target_file)
 
-            print(f"{file_local} success")
+                print(f"{file_local} success")
    
 
 if __name__ == "__main__":
@@ -295,14 +316,20 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, required=True, help="输出目录")
     parser.add_argument('--model_url', default="https://huggingface.co/datasets/ranWang/test_paper_textClassifier/resolve/main/TextClassifier-13m.pkl", type=str, help='模型下载链接')
     parser.add_argument('--threshold', default=0.5, type=float, help='预测阈值')
-    
+    parser.add_argument("--just_by_file_name", default=0, type=int, help='是否仅仅通过文件名(0/1)')
+
     args = parser.parse_args()
 
-    model_file_name = "TextClassifier.pkl"
-    download_model(model_name=model_file_name, download_url=args.model_url)
-    model = joblib.load(model_file_name)
+    just_by_file_name = args.just_by_file_name
+
+    if just_by_file_name:
+        model = None
+    else:
+        model_file_name = "TextClassifier.pkl"
+        download_model(model_name=model_file_name, download_url=args.model_url)
+        model = joblib.load(model_file_name)
     
-    move_files(args.input_dir, args.output_dir, args.threshold, model)
+    move_files(args.input_dir, args.output_dir, args.threshold, model, args.just_by_file_name)
 
 
 
