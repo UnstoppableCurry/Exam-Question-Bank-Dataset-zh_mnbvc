@@ -9,6 +9,7 @@ from tqdm import tqdm
 import shutil
 from docx import Document
 from pathlib import Path
+import textract
 
 def remove_image_string(input_string):
     """
@@ -218,6 +219,18 @@ def extract_text_from_docx(file_path):
     return text
 
 
+def extract_text_from_doc(file_path):
+    """
+    解析一个doc中的文字，没有图片标签等噪点
+    """
+    text = textract.process(file_path)
+    return text.decode("utf-8")
+
+
+def extract_text(file_local, ext):
+    return extract_text_from_docx(file_local) if ext in "docx" else extract_text_from_doc(file_local)
+
+
 def detect_language(text):
     """
     解析一段文字是否为中文
@@ -251,6 +264,9 @@ def write_classification_by_file_name_log(file_name):
         f.write(f"{file_name}\n")
 
 
+FILE_SUFFIX = {".doc", ".docx"}
+
+
 def move_files(input_dir, output_dir, threshold, model, just_by_file_name):
     if os.path.exists(input_dir) == False:
         raise ValueError('输入目录不存在')
@@ -259,18 +275,19 @@ def move_files(input_dir, output_dir, threshold, model, just_by_file_name):
 
     os.makedirs(output_dir, exist_ok=True)
     
-    # 文件名后缀
-    file_pattern = ".docx"
-    
     # 遍历一个文件夹下所有docx文件
     for root, _, files in os.walk(input_dir):
         for file in files:
-            
-            if not file.endswith(file_pattern):
+
+            # ext=文件扩展名
+            _, ext = os.path.splitext(file)
+
+            # 如果文件扩展名不属于{".doc", ".docx"}
+            if ext not in FILE_SUFFIX:
                 continue
 
             file_local = os.path.join(root, file)
-
+           
             # widnwos下的目录和ubuntu不一样
             if "\\" in file_local:
                 file_local = file_local.replace("\\","/")
@@ -280,28 +297,29 @@ def move_files(input_dir, output_dir, threshold, model, just_by_file_name):
 
             if os.path.exists(target_file):
                 continue
-   
+            
             try:
-                # 存在一些无法解析的字符集的文件会报错
-                docx_text = extract_text_from_docx(file_local)
+                text = extract_text(file_local, ext=ext)
 
                 # 如果不是中文
-                if detect_language(docx_text) != "Chinese":
+                if detect_language(text) != "Chinese":
                     continue
             except: 
                 continue
             
             # 如果选择"仅通过文件名"或者提取的文件内容字符数量小于100
-            if just_by_file_name or len(docx_text) < 100:
+            if just_by_file_name or len(text) < 50:
+
                 predict = judge_examination_paper_by_file_name(file)
+                
                 # 标记一下通过文件名提取出来的docx
                 if predict:
                     write_classification_by_file_name_log(file)
             else:
                 # 一个和多个文件速度没差
-                predict = predict_with_threshold(model, [one_text_pre_process(docx_text)], threshold)[0]
+                predict = predict_with_threshold(model, [one_text_pre_process(text)], threshold)[0]
 
-            
+            print(f"{file_local} a")
             # 0/1 => False/True
             if predict:
                 Path(target_dir).mkdir(parents=True, exist_ok=True)
