@@ -246,7 +246,7 @@ def judge_examination_paper_by_file_name(file_name):
     return any(key_word in file_name for key_word in EXAMINATION_KEY_WORDS)
 
 
-def write_classification_by_ile_name_log(file_name):
+def write_classification_by_file_name_log(file_name):
     with open("file_name_classification.log", "a") as f:
         f.write(f"{file_name}\n")
 
@@ -296,7 +296,7 @@ def move_files(input_dir, output_dir, threshold, model, just_by_file_name):
                 predict = judge_examination_paper_by_file_name(file)
                 # 标记一下通过文件名提取出来的docx
                 if predict:
-                    write_classification_by_ile_name_log(file)
+                    write_classification_by_file_name_log(file)
             else:
                 # 一个和多个文件速度没差
                 predict = predict_with_threshold(model, [one_text_pre_process(docx_text)], threshold)[0]
@@ -308,7 +308,7 @@ def move_files(input_dir, output_dir, threshold, model, just_by_file_name):
                 shutil.copy(file_local, target_file)
 
                 print(f"{file_local} success")
-   
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -328,10 +328,6 @@ if __name__ == "__main__":
         model_file_name = "TextClassifier.pkl"
         download_model(model_name=model_file_name, download_url=args.model_url)
         model = joblib.load(model_file_name)
-    
+
     move_files(args.input_dir, args.output_dir, args.threshold, model, args.just_by_file_name)
-
-
-
-            
 
