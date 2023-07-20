@@ -307,7 +307,7 @@ def move_files(input_dir, output_dir, threshold, model, just_by_file_name):
             except: 
                 continue
             
-            # 如果选择"仅通过文件名"或者提取的文件内容字符数量小于100
+            # 如果选择"仅通过文件名"或者提取的文件内容字符数量小于50
             if just_by_file_name or len(text) < 50:
 
                 predict = judge_examination_paper_by_file_name(file)
