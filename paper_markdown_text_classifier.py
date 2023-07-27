@@ -106,7 +106,7 @@ def chinese_tokenizer(text):
     return list(tokens)
 
 
-def predict_with_threshold(model, X, threshold=0.5):
+def get_predict_with_threshold(model, X, threshold=0.5):
     """
     对模型进行带阈值的预测。
     
@@ -117,11 +117,12 @@ def predict_with_threshold(model, X, threshold=0.5):
     
     返回:
     predictions (array-like): 预测结果。
+    positive_probabilities: 预测的值
     """
     probabilities = model.predict_proba(X)
     positive_probabilities = probabilities[:, 1]
     predictions = (positive_probabilities > threshold).astype(int)
-    return predictions
+    return predictions, positive_probabilities
 
 
 def change_last_folder_name(path, new_folder_name):
@@ -267,72 +268,77 @@ def write_classification_by_file_name_log(file_name):
 FILE_SUFFIX = {".doc", ".docx"}
 
 
-def move_files(input_dir, output_dir, threshold, model, just_by_file_name):
+def move_files(input_dir, output_dir, threshold, model, just_by_file_name=False):
     if os.path.exists(input_dir) == False:
         raise ValueError('输入目录不存在')
     if os.path.abspath(input_dir) == os.path.abspath(output_dir):
         raise ValueError('输入目录和输出目录不能相同')
-
+    
     os.makedirs(output_dir, exist_ok=True)
     
-    # 遍历一个文件夹下所有docx文件
+    all_file = []
+    # 先把文件列表放到一个变量中，这样可以使用tqdm来查看进度
     for root, _, files in os.walk(input_dir):
         for file in files:
-
-            # ext=文件扩展名
-            _, ext = os.path.splitext(file)
-
-            # 如果文件扩展名不属于{".doc", ".docx"}
-            if ext not in FILE_SUFFIX:
-                continue
-
-            file_local = os.path.join(root, file)
-           
-            # widnwos下的目录和ubuntu不一样
-            if "\\" in file_local:
-                file_local = file_local.replace("\\","/")
-
-            target_dir = os.path.join(output_dir, os.path.relpath(root, input_dir))
-            target_file = os.path.join(target_dir, file_local.split("/")[-1])
-
-            if os.path.exists(target_file):
-                continue
+            all_file.append({
+                "root": root,
+                "file": file
+            })
             
-            try:
-                text = extract_text(file_local, ext=ext)
+            
+    for row in tqdm(all_file):
+        root = row["root"]
+        file = row["file"]
 
-                # 如果不是中文
-                if detect_language(text) != "Chinese":
-                    continue
-            except: 
+        _, ext = os.path.splitext(file)
+
+        if ext not in FILE_SUFFIX:
+            continue
+
+        file_local = os.path.join(root, file)
+
+        # widnwos下的目录和ubuntu不一样
+        if "\\" in file_local:
+            file_local = file_local.replace("\\","/")
+
+        target_dir = os.path.join(output_dir, os.path.relpath(root, input_dir))
+        target_file = os.path.join(target_dir, file_local.split("/")[-1])
+
+        if os.path.exists(target_file):
+            continue
+
+        try:
+            text = extract_text(file_local, ext=ext)
+
+            if detect_language(text) != "Chinese":
                 continue
-            
-            # 如果选择"仅通过文件名"或者提取的文件内容字符数量小于50
-            if just_by_file_name or len(text) < 50:
+        except: 
+            continue
 
-                predict = judge_examination_paper_by_file_name(file)
-                
-                # 标记一下通过文件名提取出来的docx
-                if predict:
-                    write_classification_by_file_name_log(target_file)
-            else:
-                # 一个和多个文件速度没差
-                predict = predict_with_threshold(model, [one_text_pre_process(text)], threshold)[0]
+        if just_by_file_name or len(text) < 50:
 
-            
-            # 0/1 => False/True
+            predict = judge_examination_paper_by_file_name(file)
+
             if predict:
-                Path(target_dir).mkdir(parents=True, exist_ok=True)
-                shutil.copy(file_local, target_file)
+                write_classification_by_file_name_log(target_file)
+        else:
+            predictions, positive_probabilities = get_predict_with_threshold(model, [one_text_pre_process(text)], threshold)
+            predict = predictions[0]
+            
+        # 0/1 => False/True
+        if predict:
+            Path(target_dir).mkdir(parents=True, exist_ok=True)
+            shutil.copy(file_local, target_file)
 
-                print(f"{file_local} success")
+        with open("./move_log.log","a") as f:
+            f.write(f"{predict} {positive_probabilities[0]} {file_local}\n")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', type=str, required=True, help="输入目录")
     parser.add_argument('--output_dir', type=str, required=True, help="输出目录")
-    parser.add_argument('--model_url', default="https://huggingface.co/datasets/ranWang/test_paper_textClassifier/resolve/main/TextClassifier-13m.pkl", type=str, help='模型下载链接')
+    parser.add_argument('--model_url', default="https://huggingface.co/datasets/ranWang/test_paper_textClassifier/resolve/main/TextClassifie-full-final.pkl", type=str, help='模型下载链接')
     parser.add_argument('--threshold', default=0.5, type=float, help='预测阈值')
     parser.add_argument("--just_by_file_name", default=0, type=int, help='是否仅仅通过文件名(0/1)')
 
@@ -340,12 +346,12 @@ if __name__ == "__main__":
 
     just_by_file_name = args.just_by_file_name
 
-    if just_by_file_name:
-        model = None
-    else:
-        model_file_name = "TextClassifier.pkl"
-        download_model(model_name=model_file_name, download_url=args.model_url)
-        model = joblib.load(model_file_name)
-
+    # if just_by_file_name:
+    #     model = None
+    # else:
+    #     model_file_name = "TextClassifier.pkl"
+    #     download_model(model_name=model_file_name, download_url=args.model_url)
+    #     model = joblib.load(model_file_name)
+    model = joblib.load("./notebook/TextClassifie-full-final.pkl")
     move_files(args.input_dir, args.output_dir, args.threshold, model, args.just_by_file_name)
 
