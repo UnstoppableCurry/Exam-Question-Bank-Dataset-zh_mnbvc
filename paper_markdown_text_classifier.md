@@ -16,10 +16,13 @@ python paper_markdown_text_classifier.py --input_dir='./docx' --output_dir='./ex
 ```
 
 这会使用`./docx`目录中所有markdown文件作为输入数据，`./examination_paper`作为输出目录，并且这个目录中只存在预测是"试卷"类型的文件,
+
 此外在脚本运行目录会出现"move_log.log"和"file_name_classification.log"两个文件，
 
-move_log.log可在notebook/validation_results解析并查看分类的具体情况和使用文件名推断的预测错误
-file_name_classification用于标记这些文件中那些是使用文件名来推断的
+- move_log.log: 标记所有文件他们的原始路径以及probability
+    可在notebook/validation_results解析，并查看分类的具体情况和使用文件名推断的预测错误
+
+- file_name_classification用于标记这些文件中那些是使用文件名来推断的
 
 
 usage: paper_markdown_text_classifier.py [-h] [--input_dir INPUT_DIR] [--output_dir OUTPUT_DIR] [--model_url MODEL_URL]
