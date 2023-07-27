@@ -290,6 +290,7 @@ def move_files(input_dir, output_dir, threshold, model, just_by_file_name=False)
         root = row["root"]
         file = row["file"]
 
+        # 文件后缀，用于解析word文档
         _, ext = os.path.splitext(file)
 
         if ext not in FILE_SUFFIX:
@@ -308,13 +309,16 @@ def move_files(input_dir, output_dir, threshold, model, just_by_file_name=False)
             continue
 
         try:
+            # 因为库和文件编码的原因，有很小的几率存在解析失败
             text = extract_text(file_local, ext=ext)
 
+            # 只检查中文
             if detect_language(text) != "Chinese":
                 continue
         except: 
             continue
-
+        
+        # 如果从word文档中提取的字符数量过少，则使用文件名判断
         if just_by_file_name or len(text) < 50:
 
             predict = judge_examination_paper_by_file_name(file)
@@ -346,12 +350,12 @@ if __name__ == "__main__":
 
     just_by_file_name = args.just_by_file_name
 
-    # if just_by_file_name:
-    #     model = None
-    # else:
-    #     model_file_name = "TextClassifier.pkl"
-    #     download_model(model_name=model_file_name, download_url=args.model_url)
-    #     model = joblib.load(model_file_name)
-    model = joblib.load("./notebook/TextClassifie-full-final.pkl")
+    if just_by_file_name:
+        model = None
+    else:
+        model_file_name = "TextClassifier.pkl"
+        download_model(model_name=model_file_name, download_url=args.model_url)
+        model = joblib.load(model_file_name)
+
     move_files(args.input_dir, args.output_dir, args.threshold, model, args.just_by_file_name)
 
