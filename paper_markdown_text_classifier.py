@@ -350,12 +350,12 @@ if __name__ == "__main__":
 
     just_by_file_name = args.just_by_file_name
 
-    if just_by_file_name:
-        model = None
-    else:
-        model_file_name = "TextClassifier.pkl"
-        download_model(model_name=model_file_name, download_url=args.model_url)
-        model = joblib.load(model_file_name)
-   
+    # if just_by_file_name:
+    #     model = None
+    # else:
+    #     model_file_name = "TextClassifier.pkl"
+    #     download_model(model_name=model_file_name, download_url=args.model_url)
+    #     model = joblib.load(model_file_name)
+    model = joblib.load("./notebook/TextClassifie-full-final.pkl")
     move_files(args.input_dir, args.output_dir, args.threshold, model, args.just_by_file_name)
 
