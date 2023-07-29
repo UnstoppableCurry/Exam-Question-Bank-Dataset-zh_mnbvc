@@ -31,9 +31,10 @@
     markdown_folder = r'/www/dataset/MNBVC/clear_data'  # 存放.md文件的文件夹路径
     image_folder ="/www/dataset/MNBVC/image_folder"
 
-3.统计文件是否为试卷
+3统计文件是否为试卷.
   3.1 统计试卷词频分布
   3.2 通过获得词频分布，对文档进行过过滤
+
 
 一个实例 [paper_markdown_text_classifier](./paper_markdown_text_classifier.md)
                      

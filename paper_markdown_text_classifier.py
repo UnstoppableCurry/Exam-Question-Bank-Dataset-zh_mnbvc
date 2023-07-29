@@ -10,6 +10,9 @@ import shutil
 from docx import Document
 from pathlib import Path
 import textract
+import csv
+from collections import defaultdict
+
 
 def remove_image_string(input_string):
     """
@@ -92,6 +95,24 @@ def dataset_map_pre_process(row):
     return row
 
 
+def is_chinese_or_english(char):
+    # 判断是否为中文
+    if '\u4e00' <= char <= '\u9fff':
+        return True
+    # 判断是否为英文
+    elif 'a' <= char.lower() <= 'z':
+        return True
+    else:
+        return False
+
+
+def is_all_chinese_or_english(text):
+    for char in text:
+        if not is_chinese_or_english(char):
+            return False
+    return True
+
+
 def chinese_tokenizer(text):
     """
     对中文文本进行分词。
@@ -103,7 +124,7 @@ def chinese_tokenizer(text):
     tokens (list): 分词后的词语列表。
     """
     tokens = jieba.cut(text)
-    return list(tokens)
+    return list(filter(lambda x:is_all_chinese_or_english(x), tokens))
 
 
 def get_predict_with_threshold(model, X, threshold=0.5):
@@ -123,23 +144,6 @@ def get_predict_with_threshold(model, X, threshold=0.5):
     positive_probabilities = probabilities[:, 1]
     predictions = (positive_probabilities > threshold).astype(int)
     return predictions, positive_probabilities
-
-
-def change_last_folder_name(path, new_folder_name):
-    """
-    修改路径中的最后一个文件夹名。
-    
-    参数:
-    path (str): 原始路径。
-    new_folder_name (str): 新的文件夹名。
-    
-    返回:
-    new_path (str): 修改后的路径。
-    """
-    folders = path.split('/')
-    last_folder = folders[-1]
-    new_path = path.replace(last_folder, new_folder_name)
-    return new_path
 
 
 def get_file_content(file_local):
@@ -209,27 +213,42 @@ def download_model(*, model_name, download_url):
         raise
 
 
-def extract_text_from_docx(file_path):
+def extract_text_from_docx(file_local):
     """
     解析一个docx中的文字，没有图片标签等噪点
     """
-    doc = Document(file_path)
+    doc = Document(file_local)
     text = ''
     for paragraph in doc.paragraphs:
         text += paragraph.text + ' '
     return text
 
 
-def extract_text_from_doc(file_path):
+def extract_text_from_doc(file_local):
     """
     解析一个doc中的文字，没有图片标签等噪点
     """
-    text = textract.process(file_path)
+    text = textract.process(file_local)
     return text.decode("utf-8")
 
 
+def extract_text_from_generic(file_local):
+    """
+    解析文本文件中的文字
+    """
+    with open(file_local, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+EXTRACT_TEXT_FUNCTION_MAP = {
+    ".docx": extract_text_from_docx,
+    ".doc": extract_text_from_doc
+}
+
+
 def extract_text(file_local, ext):
-    return extract_text_from_docx(file_local) if ext in "docx" else extract_text_from_doc(file_local)
+    func = EXTRACT_TEXT_FUNCTION_MAP.get(ext, extract_text_from_generic)
+    return func(file_local)
 
 
 def detect_language(text):
@@ -253,109 +272,193 @@ def detect_language(text):
         return 'Unknown'
     
 
-EXAMINATION_KEY_WORDS = ['考试', '试卷', '卷', '试题', '试']
+EXAMINATION_KEY_WORDS = ['考试', '试卷', '卷', '试题']
 
 
 def judge_examination_paper_by_file_name(file_name):
-    return any(key_word in file_name for key_word in EXAMINATION_KEY_WORDS)
+    return int(any(key_word in file_name for key_word in EXAMINATION_KEY_WORDS))
 
 
-def write_classification_by_file_name_log(file_name):
-    with open("file_name_classification.log", "a") as f:
-        f.write(f"{file_name}\n")
+def read_processed_file_path(csv_path):
+    if not Path(csv_path).exists():
+        return {}
+    
+    existing_files = set()
+
+     # 读取 CSV 文件，将已经存在的文件原始路径添加到 set 中
+    with open(csv_path, 'r', newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+
+        # 如果csv只有表头而没有存在内容时
+        headers = next(reader, None)
+        if headers is None:
+            return existing_files
+
+        for row in reader:
+            existing_files.add(row["file_path"])
+  
+    
+    return existing_files
 
 
-FILE_SUFFIX = {".doc", ".docx"}
+CLASSIFY_KEYWORDS = [
+    {"filename": ["公务员"], "content": ["公共管理", "公共事务", "公文"]},
+    {"filename": ["化学"], "content": ["化合物", "分子", "化学式"]},
+    {"filename": ["医学"], "content": ["医疗", "症状", "病患", "医生", "病理", "药物", "手术", "诊断"]},
+    {"filename": ["历史"], "content": []},
+    {"filename": ["地理"], "content": ["地形", "气候", "地区", "地球", "山脉", "河流", "大洋", "平原", "城市", "人口", "资源"]},
+    {"filename": ["政治"], "content": ["税务机关", "政策", "法律", "选举", "马克思"]},
+    {"filename": ["数学", "通项公式"], "content": ["乘法", "函数", "方程", "△ABC", "复数", "几何", "概率", "向量"]},
+    {"filename": ["物理"], "content": ["动能", "磁感应", "电磁", "光学", "粒子", "原子", "电路", "匀速运动", "运动时间"]},
+    {"filename": ["生物"], "content": ["生命", "细胞", "基因", "进化", "生态"]},
+    {"filename": ["语文", "文本阅读"], "content": ["阅读", "诗歌", "散文", "古文", "现代文", "修辞", "文言文"]},
+    {"filename": ["理综", "理科综合"], "content": []}, 
+    {"filename": ["文综", "文科综合"], "content": []}
+]
 
 
-def move_files(input_dir, output_dir, threshold, model, just_by_file_name=False):
-    if os.path.exists(input_dir) == False:
+
+def classify_file(file_name, file_content):
+    
+    # 检查文件名是否含有分类关键词
+    for category_info in CLASSIFY_KEYWORDS:
+        filename_keywords = category_info["filename"]
+        if any(keyword in file_name for keyword in filename_keywords):
+            return filename_keywords[0]
+
+    # 提取文件内容的前三行
+    file_content_lines = file_content.split('\n')[:3]
+    first_two_lines = '\n'.join(file_content_lines)
+    
+    # 如果文件名没有匹配关键词，那么检查文件内容前两行中的 filename 关键词出现次数（有一些文件文件名和试卷内的试卷名不一致）
+    category_scores = defaultdict(int)
+    for category_info in CLASSIFY_KEYWORDS:
+        for keyword in category_info["filename"]:
+            category_scores[category_info["filename"][0]] += first_two_lines.count(keyword)
+
+    # 如果关键词出现次数有最大值，返回对应分类
+    max_category = max(category_scores, key=category_scores.get)
+    if category_scores[max_category] > 0:
+        return max_category
+
+    # 如果以上步骤未能确定分类，那么通过统计文件内容中 content 关键词出现次数来确定分类
+    category_scores = defaultdict(int)
+    for category_info in CLASSIFY_KEYWORDS:
+        for keyword in category_info["content"]:
+            category_scores[category_info["filename"][0]] += file_content.count(keyword)
+
+    max_category = max(category_scores, key=category_scores.get)
+    if category_scores[max_category] == 0:
+        return "other"
+    else:
+        return max_category
+
+
+FILE_SUFFIX = {".doc", ".docx", ".md"}
+
+
+def move_files(input_dir, output_dir, threshold, model, csv_path, just_by_file_name=False):
+    if not os.path.exists(input_dir):
         raise ValueError('输入目录不存在')
-    if os.path.abspath(input_dir) == os.path.abspath(output_dir):
+    if output_dir and os.path.abspath(input_dir) == os.path.abspath(output_dir):
         raise ValueError('输入目录和输出目录不能相同')
     
-    os.makedirs(output_dir, exist_ok=True)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
     
+    # 读取已经处理完毕的文件原始路径
+    existing_files = read_processed_file_path(csv_path)
+
     all_file = []
     # 先把文件列表放到一个变量中，这样可以使用tqdm来查看进度
     for root, _, files in os.walk(input_dir):
         for file in files:
+            # 如果文件已经被处理过，则不添加当前文件
+            if os.path.join(root, file) in existing_files:
+                continue
+
             all_file.append({
                 "root": root,
                 "file": file
             })
             
-            
-    for row in tqdm(all_file):
-        root = row["root"]
-        file = row["file"]
+    with open(csv_path, 'a', newline='', encoding='utf-8') as csvfile:
+        fieldnames = ['file_path', 'target_path', 'probability', 'type']  # 列名
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
-        # 文件后缀，用于解析word文档
-        _, ext = os.path.splitext(file)
+        # 如果csv文件为空则将列名写入表头
+        if not Path(csv_path).stat().st_size:
+            writer.writeheader()
 
-        if ext not in FILE_SUFFIX:
-            continue
+        for row in tqdm(all_file):
+            root = row["root"]
+            file = row["file"]
 
-        file_local = os.path.join(root, file)
+            # 文件后缀，用于解析word文档
+            _, ext = os.path.splitext(file)
 
-        # widnwos下的目录和ubuntu不一样
-        if "\\" in file_local:
-            file_local = file_local.replace("\\","/")
-
-        target_dir = os.path.join(output_dir, os.path.relpath(root, input_dir))
-        target_file = os.path.join(target_dir, file_local.split("/")[-1])
-
-        if os.path.exists(target_file):
-            continue
-
-        try:
-            # 因为库和文件编码的原因，有很小的几率存在解析失败
-            text = extract_text(file_local, ext=ext)
-
-            # 只检查中文
-            if detect_language(text) != "Chinese":
+            if ext not in FILE_SUFFIX:
                 continue
-        except: 
-            continue
-        
-        # 如果从word文档中提取的字符数量过少，则使用文件名判断
-        if just_by_file_name or len(text) < 50:
 
-            predict = judge_examination_paper_by_file_name(file)
+            file_local = os.path.join(root, file)
 
-            if predict:
-                write_classification_by_file_name_log(target_file)
-        else:
-            predictions, positive_probabilities = get_predict_with_threshold(model, [one_text_pre_process(text)], threshold)
-            predict = predictions[0]
+            # widnwos下的目录和ubuntu不一样
+            if "\\" in file_local:
+                file_local = file_local.replace("\\","/")
+
+            if output_dir:
+                target_dir = os.path.join(output_dir, os.path.relpath(root, input_dir))
+                target_file = os.path.join(target_dir, file_local.split("/")[-1])
+
+            try:
+                # 因为库和文件编码的原因，有很小的几率存在解析失败
+                text = extract_text(file_local, ext=ext)
+
+                # 只检查中文
+                if detect_language(text) != "Chinese":
+                    continue
+            except: 
+                continue
             
-        # 0/1 => False/True
-        if predict:
-            Path(target_dir).mkdir(parents=True, exist_ok=True)
-            shutil.copy(file_local, target_file)
+            # 如果从word文档中提取的字符数量过少，则使用文件名判断
+            if just_by_file_name or len(text) < 50:
+                predict = judge_examination_paper_by_file_name(file)
+            else:
+                predictions, positive_probabilities = get_predict_with_threshold(model, [one_text_pre_process(text)], threshold)
+                predict = predictions[0]
+                
+            # 0/1 => False/True
+            if predict and output_dir:
+                Path(target_dir).mkdir(parents=True, exist_ok=True)
+                shutil.copy(file_local, target_file)
 
-        with open("./move_log.log","a") as f:
-            f.write(f"{predict} {positive_probabilities[0]} {file_local}\n")
+            writer.writerow({
+                'file_path': file_local, 
+                'target_path': target_file if predict and output_dir else file_local, 
+                'probability': positive_probabilities[0] if positive_probabilities[0] else None,
+                "type": classify_file(file, text) if predict else None
+            })
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', type=str, required=True, help="输入目录")
-    parser.add_argument('--output_dir', type=str, required=True, help="输出目录")
+    parser.add_argument('--output_dir', type=str, default=None, help="输出目录")
     parser.add_argument('--model_url', default="https://huggingface.co/datasets/ranWang/test_paper_textClassifier/resolve/main/TextClassifie-full-final.pkl", type=str, help='模型下载链接')
     parser.add_argument('--threshold', default=0.5, type=float, help='预测阈值')
     parser.add_argument("--just_by_file_name", default=0, type=int, help='是否仅仅通过文件名(0/1)')
+    parser.add_argument("--csv_path", default="./classifier.csv", type=str, help='保存的csv路径')
 
     args = parser.parse_args()
 
     just_by_file_name = args.just_by_file_name
 
     if just_by_file_name:
-        model = None
+        model = None         
     else:
         model_file_name = "TextClassifier.pkl"
         download_model(model_name=model_file_name, download_url=args.model_url)
         model = joblib.load(model_file_name)
         
-    move_files(args.input_dir, args.output_dir, args.threshold, model, args.just_by_file_name)
+    move_files(args.input_dir, args.output_dir, args.threshold, model, args.csv_path, args.just_by_file_name)
 
