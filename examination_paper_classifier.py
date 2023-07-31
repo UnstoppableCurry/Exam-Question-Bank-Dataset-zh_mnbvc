@@ -11,7 +11,7 @@ from docx import Document
 from pathlib import Path
 import textract
 import csv
-from collections import defaultdict
+
 
 
 def remove_image_string(input_string):
@@ -220,7 +220,7 @@ def extract_text_from_docx(file_local):
     doc = Document(file_local)
     text = ''
     for paragraph in doc.paragraphs:
-        text += paragraph.text + ' '
+        text += paragraph.text + '\n'
     return text
 
 
@@ -300,117 +300,6 @@ def read_processed_file_path(csv_path):
     
     return existing_files
 
-
-CLASSIFY_KEYWORDS = [
-    {"category": ["公务员", "公考"], "keywords": ["农村", "改革", "产业", "社会", "企业", "宪法", "合同","权利","公民", "履行", "义务", "规定"]},
-    {"category": ["医学"], "keywords": ["细胞", 
-                                      "检查", 
-                                      "患者", 
-                                      "治疗", 
-                                      "诊断", 
-                                      "药物", 
-                                      "抗原", 
-                                      "抗体", 
-                                      "沉淀", 
-                                      "琼脂", 
-                                      "免疫", 
-                                      "血型",
-                                      "伪影",
-                                      "冠状",
-                                      "脂肪",
-                                      "抑制",
-                                      "加权",
-                                      "药师",
-                                      "药品",
-                                      "药学",
-                                      "执业",
-                                      "妊娠",
-                                      "血流",
-                                      "动脉",
-                                      "静脉",
-                                      "阳性反应",
-                                      "增生",
-                                      "急性",
-                                      "临床",
-                                      "葡萄糖",
-                                      "氨基酸",
-                                      "胆红素",
-                                      "血清",
-                                      "血浆",
-                                      "螺旋",
-                                      "溶血",
-                                      "抑制",
-                                      "免疫测定",
-                                      "吖啶"
-                                      ]},
-    {"category": ["化学"], "keywords": ["溶液", "反应", "mol", "元素", "物质", "离子", "氧化"]},
-    {"category": ["历史"], "keywords": ["发展", "中国", "改革", "社会", "革命", "战争", "制度"]},
-    {"category": ["地理"], "keywords": ["城市", "地区", "区域", "气候", "河流", "降水", "昼长", "经线", "纬度", "赤道"]},
-    {"category": ["政治"], "keywords": ["文化", "经济", "国家", "中国", "企业", "社会", "政府"]},
-    {"category": ["数学"], "keywords": ["直线", 
-                                      "函数", 
-                                      "角形", 
-                                      "方程", 
-                                      "平面", 
-                                      "单调", 
-                                      "数列", 
-                                      "椭圆", 
-                                      "单调", 
-                                      "面积", 
-                                      "方形",
-                                      "向量",
-                                      "坐标",
-                                      "面积",
-                                      "整数",
-                                      "抽取",
-                                      "直方图",
-                                      "子集",
-                                      "全集",
-                                      "集合",
-                                      "实数",
-                                      "余数",
-                                      "中位数",
-                                      "众数",
-                                      "统计图"]},
-    {"category": ["物理"], "keywords": ["方向", "运动", "质量", "物体", "小球", "大小", "磁场", "劲度系数"]},
-    {"category": ["生物"], "keywords": ["细胞", "基因", "染色体", "植物", "生物", "溶液", "杂交", "培养基"]},
-    {"category": ["语文"], "keywords": ["阅读", "词语", "句子", "作者", "文章", "描写", "标点符号", "短文"]},
-    {"category": ["心理"], "keywords": ["心理咨询", "求助者", "情绪", "焦虑", "情感"]},
-    {"category": ["理综", "理科综合"], "keywords": []}, 
-    {"category": ["文综", "文科综合"], "keywords": []},
-    {"category": ["other"], "keywords": ["分析", "系统", "问题", "软件", "数据", "开发", "应用", "信息","数据库"]}
-]
-
-
-def classify_paper_type(file_content, file_name=None, gap=0.05, min_total=5, debug=False):
-    if file_name:
-        for category_keywords in CLASSIFY_KEYWORDS:
-            categorys = category_keywords["category"]
-            if any([category in file_name for category in categorys]):
-                return categorys[0]
-
-    # Create a dictionary to store keyword counts for each category
-    category_counts = {}
-
-    for item in CLASSIFY_KEYWORDS:
-        keywords = item["category"] + item["keywords"]
-        count = sum(file_content.count(keyword) for keyword in keywords)
-        category_counts[item["category"][0]] = count
-
-    # Sort the categories by their counts in descending order
-    sorted_categories = sorted(category_counts.items(), key=lambda x: x[1], reverse=True)
-
-    if debug:
-        print(sorted_categories)
-
-    # 检查出现最多的和次多的差距是否过小，如果过小则认为无法区分
-    if len(sorted_categories) > 1 and sorted_categories[0][1] - sorted_categories[1][1] < sorted_categories[0][1] * gap:
-        return "indefinable"
-    else:
-        if sorted_categories[0][1] <= min_total:
-            return "indefinable"
-        return sorted_categories[0][0]
-
               
 FILE_SUFFIX = {".doc", ".docx", ".md"}
 
@@ -441,7 +330,7 @@ def move_files(input_dir, output_dir, threshold, model, csv_path, just_by_file_n
             })
             
     with open(csv_path, 'a', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['file_path', 'target_path', 'probability', 'type']  # 列名
+        fieldnames = ['file_path', 'target_path', 'probability']  # 列名
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         # 如果csv文件为空则将列名写入表头
@@ -494,7 +383,6 @@ def move_files(input_dir, output_dir, threshold, model, csv_path, just_by_file_n
                 'file_path': file_local, 
                 'target_path': target_file if predict and output_dir else file_local, 
                 'probability': positive_probabilities[0] if positive_probabilities[0] else None,
-                "type": classify_paper_type(text, file_name=file) if predict else None
             })
 
 
@@ -511,12 +399,12 @@ if __name__ == "__main__":
 
     just_by_file_name = args.just_by_file_name
 
-    # if just_by_file_name:
-    #     model = None         
-    # else:
-    #     model_file_name = "TextClassifier.pkl"
-    #     download_model(model_name=model_file_name, download_url=args.model_url)
-    #     model = joblib.load(model_file_name)
-    model = joblib.load("./notebook/TextClassifie-full-final.pkl")
+    if just_by_file_name:
+        model = None         
+    else:
+        model_file_name = "TextClassifier.pkl"
+        download_model(model_name=model_file_name, download_url=args.model_url)
+        model = joblib.load(model_file_name)
+  
     move_files(args.input_dir, args.output_dir, args.threshold, model, args.csv_path, args.just_by_file_name)
 
