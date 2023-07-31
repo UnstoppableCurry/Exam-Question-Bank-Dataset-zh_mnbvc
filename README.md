@@ -31,20 +31,30 @@
     markdown_folder = r'/www/dataset/MNBVC/clear_data'  # 存放.md文件的文件夹路径
     image_folder ="/www/dataset/MNBVC/image_folder"
 
-3统计文件是否为试卷.
-  3.1 统计试卷词频分布
-  3.2 通过获得词频分布，对文档进行过过滤
 
-
-一个实例 [paper_markdown_text_classifier](./paper_markdown_text_classifier.md)
+3.统计文件是否为试卷.
                      
-    python 统计是否为试卷.py  #打印输出词频获得分布
+    python examination_paper_classifier.py --input_dir="./docx" --csv_path="classifier.csv"
+    以上指令会以"./docx"下所有的doc/docx/md文件进行"试卷"以及"试卷类型"的分类，结果会保存到"classifier.csv"中
+
+    options:
+    --input_dir 必填项, 输入目录
+    --output_dir 输出目录，可不填，不填入代表不进行输出
+    --model_url 模型下载链接，有默认值，如果填入，则此模型必须可由 joblib 进行加载
+    --threshold 预测阈值，默认0.5，如果 output_dir 未填入，则此参数没有任何作用
+    --just_by_file_name 是否仅仅通过文件名(0/1), 默认0
+    --csv_path 保存的csv路径，默认"./classifier.csv"
     
-    python 过滤试卷.py  #将结果存储到csv中
-    output_csv_with_keywords = 'rows_with_keywords.csv' # 保存含有关键字的行到新的CSV文件
-    output_csv_without_keywords = 'rows_without_keywords.csv' # 保存不含关键字的行到新的CSV文件
+    csv列名:
+    -- file_path: str, 文件的输入路径
+    -- target_path: str, 文件的输出输出路径，如果 output_dir 未填入或者预测值小于 threshold ，此字段等同于 file_path
+    -- probability: float|None，模型的预测值
+    -- type: str: [公务员|化学|医学|历史|地理|政治|数学|物理|生物|语文|理综|文综|other|None]，如果模型的预测值小于 threshold ，此字段为None
 
-
+    注意事项*
+    - 此脚本仅接受 doc,docx,md 文件
+    - 在这个脚本中当提取文件的文本内容较少时，会采用根据文件名检测的策略，在这种情况下csv列名的 probability 为 None
+    
 
 4.统计为试卷的文件中是否含有答案
 
