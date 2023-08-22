@@ -33,7 +33,8 @@
 
 
 3.统计文件是否为试卷.
-                     
+    [复现](./notebook/examination_paper_classifier/train-classifier.md)
+
     python examination_paper_classifier.py --input_dir="./docx" --csv_path="classifier.csv"
     以上指令会以"./docx"下所有的doc/docx/md文件进行"试卷"以及"试卷类型"的分类，结果会保存到"classifier.csv"中
 
@@ -54,7 +55,16 @@
     注意事项*
     - 此脚本仅接受 doc,docx,md 文件
     - 在这个脚本中当提取文件的文本内容较少时，会采用根据文件名检测的策略，在这种情况下csv列名的 probability 为 None
-    
+
+3.1 试卷类型检测（非必要）
+    python examination_paper_classifier.py --read_csv_file="./classifier.csv" --save_csv_file="classifier-category.csv" --threshold="0.5"
+
+    此脚本不建议在生产使用，目前大部分类型是由文件路径提供
+
+     options:
+    --read_csv_file 必填项, 'examination_paper_category_classifier.py'所保存的csv路径地址
+    --save_csv_file 输出文件，保存的csv路径地址
+    --threshold 预测阈值，默认0.5，因为我们之检测文件是否为试卷是保存的 probabilitity ，此参数为预测试卷的 threshold
 
 4.统计为试卷的文件中是否含有答案
 

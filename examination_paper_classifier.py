@@ -11,7 +11,7 @@ from docx import Document
 from pathlib import Path
 import textract
 import csv
-
+import pypdfium2 as pdfium
 
 
 def remove_image_string(input_string):
@@ -240,9 +240,27 @@ def extract_text_from_generic(file_local):
         return f.read()
 
 
+def extract_text_from_pdf(file_local):
+    """
+    解析pdf文件中的文字
+    """
+    with open(file_local, "r", encoding="utf-8") as f:
+        text = f.read()
+    
+        text = ""
+        pdf = pdfium.PdfDocument(text)
+        for i in range(len(pdf)):
+            page = pdf.get_page(i)
+            textpage = page.get_textpage()
+            text += textpage.get_text_range() + "\n"
+                
+    return text
+
+
 EXTRACT_TEXT_FUNCTION_MAP = {
     ".docx": extract_text_from_docx,
-    ".doc": extract_text_from_doc
+    ".doc": extract_text_from_doc,
+    ".pdf": extract_text_from_pdf
 }
 
 
@@ -300,9 +318,6 @@ def read_processed_file_path(csv_path):
     
     return existing_files
 
-              
-FILE_SUFFIX = {".doc", ".docx", ".md"}
-
 
 def move_files(input_dir, output_dir, threshold, model, csv_path, just_by_file_name=False):
     if not os.path.exists(input_dir):
@@ -344,7 +359,7 @@ def move_files(input_dir, output_dir, threshold, model, csv_path, just_by_file_n
             # 文件后缀，用于解析word文档
             _, ext = os.path.splitext(file)
 
-            if ext not in FILE_SUFFIX:
+            if ext not in EXTRACT_TEXT_FUNCTION_MAP:
                 continue
 
             file_local = os.path.join(root, file)

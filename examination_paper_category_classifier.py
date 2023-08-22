@@ -139,9 +139,6 @@ def process(save_csv_file, read_csv_file, threshold=0.5):
             for _, row in positive_df.iterrows():
                 file_path = Path(row["file_path"])
 
-                # if "./data/docx/202307/公考状元笔记" not in row["file_path"]:
-                #     continue
-
                 # textract不支持Pathlib，所以这里必须要把file_path再次转化成str
                 text = extract_text(str(file_path), file_path.suffix)
 
