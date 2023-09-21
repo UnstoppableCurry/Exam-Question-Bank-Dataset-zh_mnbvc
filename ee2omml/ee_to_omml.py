@@ -98,6 +98,7 @@ if __name__ == '__main__':
                     break
         # 保存文件
         word.ActiveDocument.SaveAs(os.path.join(SAVE_DIR, fn), FileFormat=constants.wdFormatXMLDocument)
+        time.sleep(1)
         doc.Close(False)
 
     word.Quit()
