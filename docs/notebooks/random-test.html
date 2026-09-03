@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>随机抽检模型 · 静态 notebook</title>
+  <meta name="description" content="从本地 docx 目录随机抽样，打印中间置信度样本并人工查看正文。">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/notebooks/random-test.html">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:title" content="随机抽检模型 · 静态 notebook">
+  <meta property="og:description" content="从本地 docx 目录随机抽样，打印中间置信度样本并人工查看正文。">
+  <meta property="og:url" content="https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/notebooks/random-test.html">
+  <meta property="og:site_name" content="中文考试题库数据集展示">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="随机抽检模型 · 静态 notebook">
+  <meta name="twitter:description" content="从本地 docx 目录随机抽样，打印中间置信度样本并人工查看正文。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body class="nb-page">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="../index.html">
+        <span class="brand-seal" aria-hidden="true">题</span>
+        <span class="brand-text">
+          <strong>中文考试题库数据集</strong>
+          <span>静态文档与结果展示</span>
+        </span>
+      </a>
+      <button class="nav-toggle" type="button" data-nav-toggle aria-controls="site-nav" aria-expanded="false">菜单</button>
+      <nav class="site-nav" id="site-nav" data-nav-panel aria-label="站点">
+        <ul>
+          <li><a href="../index.html">首页</a></li>
+<li><a href="../pipeline.html">处理流程</a></li>
+<li><a href="../usage.html">代码使用</a></li>
+<li><a href="../notebooks.html">实验记录</a></li>
+<li><a href="../results.html">记录结果</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <div class="wrap">
+      
+    <section class="page-hero">
+      <p class="kicker">NOTEBOOK</p>
+      <h1>随机抽检模型</h1>
+      <p class="lead">从本地 docx 目录随机抽样，打印中间置信度样本并人工查看正文。 本页由 <code>notebook/random_test_model.ipynb</code> 的已保存单元格静态渲染，没有重新执行内核。</p>
+      <p class="actions">
+        <a class="button button-primary" href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/random_test_model.ipynb">GitHub 源文件</a>
+        <a class="button button-ghost" href="https://nbviewer.org/github/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/random_test_model.ipynb">nbviewer</a>
+        <a class="button button-ghost" href="../notebooks.html">返回目录</a>
+      </p>
+    </section>
+    <p class="note">过长输出（尤其是文件路径清单和词汇表）已截断，以免 GitHub Pages 产物过大。数字与表格保持原样。</p>
+    
+            <article class="nb-cell">
+              <p class="nb-label">Code · 1 · In[1]</p>
+              <pre><code>import sys
+import os
+
+sys.path.append(&#x27;../&#x27;)</code></pre>
+              
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 2 · In[2]</p>
+              <pre><code>import joblib
+from paper_markdown_text_classifier import *
+
+model = joblib.load(&quot;TextClassifie-full-final.pkl&quot;)</code></pre>
+              
+            </article>
+            <article class="nb-cell"><p class="nb-label">Markdown · 3</p><h1>随机测试方法</h1></article>
+            <article class="nb-cell">
+              <p class="nb-label">Code · 4 · In[5]</p>
+              <pre><code>import os
+from tqdm import tqdm
+from pathlib import Path
+import random
+import datasets
+
+counterexamples = list(Path(&quot;../data/docx&quot;).glob(&quot;**/*.doc*&quot;))
+
+def generate_random_tests(total=100):
+    random_numbers_list = random.sample(range(0, len(counterexamples) + 1), total)
+    
+    test_dataset = {&quot;text&quot;:[], &quot;file_path&quot;:[]}
+    for random_number in tqdm(random_numbers_list):
+        file_path = counterexamples[random_number]
+      
+        _, ext = os.path.splitext(file_path)
+        try:
+            text = extract_text(str(file_path), ext)
+        except:
+            continue
+
+        test_dataset[&quot;text&quot;].append(text)
+        test_dataset[&quot;file_path&quot;].append(str(file_path))
+
+    test_dataset = datasets.Dataset.from_dict(test_dataset)
+    test_dataset = test_dataset.map(dataset_map_pre_process)
+    return test_dataset</code></pre>
+              
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 5 · In[7]</p>
+              <pre><code>import os
+from tqdm import tqdm
+from pathlib import Path
+import sys
+import os
+import random
+sys.path.append(&#x27;../&#x27;)
+
+from paper_markdown_text_classifier import extract_text
+
+
+counterexamples = list(Path(&quot;../data/docx&quot;).glob(&quot;**/*.doc*&quot;))
+
+def generate_random_test_dataset(total=100):
+    random_numbers_list = random.sample(range(0, len(counterexamples)), total)
+    
+    test_dataset = {&quot;text&quot;:[], &quot;file_path&quot;:[]}
+    for random_number in tqdm(random_numbers_list):
+        file_path = counterexamples[random_number]
+      
+        _, ext = os.path.splitext(file_path)
+        try:
+            text = extract_text(str(file_path), ext)
+        except:
+            continue
+
+        test_dataset[&quot;text&quot;].append(text)
+        test_dataset[&quot;file_path&quot;].append(str(file_path))
+
+    test_dataset = datasets.Dataset.from_dict(test_dataset)
+    test_dataset = test_dataset.map(dataset_map_pre_process)
+    return test_dataset</code></pre>
+              
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 6 · In[8]</p>
+              <pre><code>def move_file_to_negative(file_path):
+    file_name = file_path[file_path.rfind(&quot;/&quot;)+1:]
+    shutil.copy(file_path, os.path.join(&quot;negative_file/&quot;, file_name))
+
+def move_file_to_positive(file_path):
+    file_name = file_path[file_path.rfind(&quot;/&quot;)+1:]
+    shutil.copy(file_path, os.path.join(&quot;positive_file/&quot;, file_name))</code></pre>
+              
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 7 · In[16]</p>
+              <pre><code>error_file = []
+
+def start_test(test_dataset, model):
+    global error_file
+    
+    predictions, positive_probabilities = get_predict_with_threshold(model, test_dataset[&quot;text&quot;],0.5)
+    
+    dataset_row_list = [row for row in test_dataset]
+    zipped = list(zip(dataset_row_list, positive_probabilities))
+
+    sorted_zipped = sorted(zipped, key=lambda x: float(x[1]))
+
+    for index, (row, prediction) in enumerate(sorted_zipped):
+        scope = &#x27;{:.2f}&#x27;.format(prediction)
+        if scope not in  [&quot;0.00&quot;, &quot;1.00&quot;]:
+            print(index, &quot; --- &quot;,scope)
+            file_path = row[&#x27;file_path&#x27;].rsplit(&quot;/&quot;, 2)
+            print(&quot;/&quot;.join(file_path[-2:]))
+            print()
+
+            
+    return sorted_zipped</code></pre>
+              
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 8 · In[17]</p>
+              <pre><code>test_dataset = None
+sorted_zipped = None
+
+for _ in range(1):
+    test_dataset = generate_random_test_dataset()
+    sorted_zipped = start_test(test_dataset, model)</code></pre>
+              <pre class="nb-output"><code>100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████| 100/100 [00:06&lt;00:00, 15.45it/s]
+</code></pre>
+<pre class="nb-output"><code>Map:   0%|          | 0/100 [00:00&lt;?, ? examples/s]</code></pre>
+<pre class="nb-output"><code>72  ---  0.01
+200套WORD简历模板/133.新生命力_表格式_适用于IT、工程_2页式_无内容_有封面.doc
+
+73  ---  0.01
+KPI说明书/朝阳电子人力资源项目—02-3培训计划达成率月周报表填明说明.doc
+
+74  ---  0.02
+初次访谈/初次访谈日程安排与需配合事项.doc
+
+75  ---  0.03
+调研问卷模板/汉普-长沙卷烟-海信部门调研说明.doc
+
+76  ---  0.04
+采購部200502/华盈恒信—金德精密—改善計劃(05年02月)採購總額降價.doc
+
+77  ---  0.05
+制度/市场部员工关键事件评分细则.doc
+
+78  ---  0.06
+03绩效考核细则/2003年经营管理工作考核细则.doc
+
+79  ---  0.34
+备份/测试.doc
+
+80  ---  0.90
+讲义/jczs_qh_mst_jy1031.doc
+
+81  ---  0.98
+32、通讯、广告IT可行性报告/【公益知识库zscc.club】汽车修理厂可行性报告.doc
+
+</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 9 · In[18]</p>
+              <pre><code>view_index = 80
+
+print(sorted_zipped[view_index][0][&quot;file_path&quot;])
+print()
+for line in sorted_zipped[view_index][0][&quot;text&quot;].splitlines():
+    print(line)</code></pre>
+              <pre class="nb-output"><code>../data/docx/202307/⛵【知识船舱】60TB内部学习资源(大合集)/🌠 科学馆【1.24TB】/💊 中医宝典【877.78GB】/中医内科主治医师【13.30GB】/中医内科主治医师-基础知识（2021）【全】【5.03GB】/讲义/jczs_qh_mst_jy1031.doc
+
+　　精、气、血、津液、神
+细目       内容                                                 
+精概念    禀受于父母的生命物质与后天水谷精微相融合而形成的一种 
+          精华物质                                             
+  生成    以先天之精为本，并得到后天之精的不断充养而生成       
+  贮藏    主要藏于肾中（肾气封藏）                             
+  施泄    濡养脏腑，化气以推动和调控各脏腑机能；化为生殖之精   
+  生理功能繁衍生命、营养周身、化血、化气、化神                 
+  分类    先天之精、后天之精、脏腑之精、生殖之精               
+气概念    是人体内活力很强、运行不息的极精微物质               
+  生成    由精所化生，并与肺吸入的自然界清气相融合而成         
+          肾为生气之根、脾胃为生气之源、肺为生气之主           
+  运动    气的运动—气机，气运动的基本形式—升、降、出、入       
+  气化    由于气的运动而产生的各种变化—气化                    
+          　　气化即是体内物质新陈代谢的过程                   
+  气机与气气的运动是产生气化过程的根本。气的升降出入运动及气的 
+  化的关系阴阳双方的相互作用又是气化过程发生和赖以进行的前提与 
+          条件                                                 
+  气的功能推动与调控、温煦与凉润、防御、固摄、中介             
+气元气    最基本最重要之气                                     
+          人体生命活动的原动力，推动生长发育、脏腑功能         
+  宗气    积于胸中之气                                         
+          走息道行呼吸，贯注心脉行气血，资助先天               
+  营气    行于脉内之气，富有营养                               
+          营养人体，化生血液                                   
+  卫气    行于脉外之气，“慓疾滑利” “熏于肓膜，散于胸腹”        
+          防御外邪入侵；温养脏腑、肌肉、皮毛等；调节排汗       
+血概念    血液主要由营气和津液所组成，具有营养和滋润作用       
+  生成    以水谷精微、肾之精髓以及自然界之清气为物质基础，通过 
+          脾、胃、心、肺、肾等脏的一系列功能活动生成           
+  运行    与心、肺、脾、肝的功能活动密切相关                   
+  功能    濡养；化神                                           
+细目        内容                                                
+津概念 津质地较清稀，流动性较大，布散于体表皮肤、肌肉和孔窍，
+液       具有滋润作用。                                      
+       液质地较稠厚，流动性较小，灌注于骨节、脏腑、脑、髓等，
+         具有濡养作用。                                      
+  代谢     脾输布水液，肺通调水道，肾气化蒸腾，三焦为通道，布散
+           于全身                                              
+  功能     濡养；充养血脉                                      
+  气与津的 气能生津、气能行津、气能摄津                        
+  关系     津能生气、津能载气                                  
+神概念     人体生命活动的主宰及其外在总体表现的统称            
+  生成     精气血津液—化神、养神的物质基础                     
+           五神脏：心藏神、肺藏魄、肝藏魂、脾藏意、肾藏志      
+           “心气虚则悲，实则笑不休”，“血有余则怒，不足则恐”    
+  作用     调节精气血津液的代谢、调节脏腑的生理功能，主宰人体的
+           生命活动                                            
+气与血的关系气为血之帅：气能生血，气能行血，气能摄血            
+            血为气之母：血能载气，血能养气                      
+气与津的关系气能生津、气能行津、气能摄津                        
+            津能生气、津能载气                                  
+精血津液的关精血同源                                            
+系          津血同源                                            
+精气神之间的气能生精、摄精；精能化气；精气化神；神驭精气        
+关系                                                            
+　　精的生理功能正确的是                                                
+　　A.生津           
+…</code></pre><p class="meta">输出已截断：此处显示前 2800 个字符，原文约 10125 个字符。完整内容请打开 GitHub 或 nbviewer 上的 notebook。</p>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 10 · In[593]</p>
+              <pre><code>move_file_to_negative(sorted_zipped[90][0][&quot;file_path&quot;])</code></pre>
+              
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 11 · In[638]</p>
+              <pre><code>move_file_to_positive(sorted_zipped[82][0][&quot;file_path&quot;])</code></pre>
+              
+            </article>
+            
+    
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p><strong>本站是静态文档 / 结果展示</strong>，不是可交互运行时，也不会重新训练或分类文件。</p>
+      <p>说明只依据仓库内 README、脚本、Markdown 与 5 份已保存输出的 notebook；未写入仓库的数据集规模、用户数或未保存成绩均不在此编造。</p>
+      <nav class="footer-nav" aria-label="页脚">
+        <a href="../index.html">首页</a>
+        <a href="../pipeline.html">处理流程</a>
+        <a href="../usage.html">代码使用</a>
+        <a href="../notebooks.html">实验记录</a>
+        <a href="../results.html">记录结果</a>
+        <a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc">GitHub 仓库</a>
+        <a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/LICENSE">MIT License</a>
+      </nav>
+      <p class="meta">Copyright (c) 2023 UnstoppableCurry · 预定发布地址 https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/</p>
+    </div>
+  </footer>
+  <script src="../assets/site.js" defer></script>
+</body>
+</html>

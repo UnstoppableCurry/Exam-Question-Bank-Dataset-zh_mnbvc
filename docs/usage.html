@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>代码使用 · 中文考试题库数据集</title>
+  <meta name="description" content="README 与源码中的安装、分类 CLI 参数以及后续答案检测脚本。">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/usage.html">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:title" content="代码使用 · 中文考试题库数据集">
+  <meta property="og:description" content="README 与源码中的安装、分类 CLI 参数以及后续答案检测脚本。">
+  <meta property="og:url" content="https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/usage.html">
+  <meta property="og:site_name" content="中文考试题库数据集展示">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="代码使用 · 中文考试题库数据集">
+  <meta name="twitter:description" content="README 与源码中的安装、分类 CLI 参数以及后续答案检测脚本。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body class="">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-seal" aria-hidden="true">题</span>
+        <span class="brand-text">
+          <strong>中文考试题库数据集</strong>
+          <span>静态文档与结果展示</span>
+        </span>
+      </a>
+      <button class="nav-toggle" type="button" data-nav-toggle aria-controls="site-nav" aria-expanded="false">菜单</button>
+      <nav class="site-nav" id="site-nav" data-nav-panel aria-label="站点">
+        <ul>
+          <li><a href="index.html">首页</a></li>
+<li><a href="pipeline.html">处理流程</a></li>
+<li><a href="usage.html" aria-current="page">代码使用</a></li>
+<li><a href="notebooks.html">实验记录</a></li>
+<li><a href="results.html">记录结果</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <div class="wrap">
+      
+    <section class="page-hero">
+      <p class="kicker">USAGE</p>
+      <h1>代码使用</h1>
+      <p class="lead">命令与参数来自 README、<code>paper_markdown_text_classifier.md</code> 和脚本源码。依赖版本以 <code>requirements.txt</code> 为准。</p>
+    </section>
+    <section class="section">
+      <h2>环境</h2>
+      <pre><code>pip install pypandoc
+# CentOS 需先安装 pandoc</code></pre>
+      <p><code>requirements.txt</code> 锁定：<code>scikit-learn==1.3.0</code>、<code>jieba==0.42.1</code>、<code>python-docx==0.8.11</code>、<code>tqdm==4.65.0</code>。分类脚本另外导入 <code>textract</code>、<code>requests</code>、<code>docx</code> 等，使用前需按实际脚本补齐。</p>
+    </section>
+    <section class="section">
+      <h2>试卷分类 CLI</h2>
+      <pre><code>python examination_paper_classifier.py --input_dir="./docx" --csv_path="classifier.csv"</code></pre>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>参数</th><th>README / 源码说明</th></tr></thead>
+          <tbody>
+            <tr><td><code>--input_dir</code></td><td>必填，输入目录</td></tr>
+            <tr><td><code>--output_dir</code></td><td>可选；不填则不拷贝文件</td></tr>
+            <tr><td><code>--model_url</code></td><td>默认指向 Hugging Face <code>TextClassifie-full-final.pkl</code>；填入则须能被 joblib 加载</td></tr>
+            <tr><td><code>--threshold</code></td><td>默认 0.5；无 <code>output_dir</code> 时该参数不用于拷贝</td></tr>
+            <tr><td><code>--just_by_file_name</code></td><td>0/1，默认 0</td></tr>
+            <tr><td><code>--csv_path</code></td><td>默认 <code>./classifier.csv</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><code>paper_markdown_text_classifier.md</code> 记录了较早接口 <code>paper_markdown_text_classifier.py</code>，示例把预测为试卷的文件拷到输出目录，并写下 <code>move_log.log</code> 与 <code>file_name_classification.log</code>。现仓库入口文件名是 <code>examination_paper_classifier.py</code>。</p>
+    </section>
+    <section class="section">
+      <h2>默认模型地址</h2>
+      <p>源码默认值：</p>
+      <p><a href="https://huggingface.co/datasets/ranWang/test_paper_textClassifier/resolve/main/TextClassifie-full-final.pkl"><code>https://huggingface.co/datasets/ranWang/test_paper_textClassifier/resolve/main/TextClassifie-full-final.pkl</code></a></p>
+      <p><code>train_examination_paper_classifier.ipynb</code> 通过 <code>datasets.load_dataset("ranWang/test_paper_textClassifier")</code> 读取训练/测试划分。本站不转述该托管页上未写入本仓库的额外统计。</p>
+    </section>
+    <section class="section">
+      <h2>后续脚本</h2>
+      <pre><code>python 判断是否有答案.py
+# output_csv_with_answers = 'rows_with_answers.csv'
+# output_csv_without_answers = 'rows_without_answers.csv'
+
+python 有答案试卷切分-对齐.py
+# csv_file = 'rows_with_keywords.csv'</code></pre>
+    </section>
+    
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p><strong>本站是静态文档 / 结果展示</strong>，不是可交互运行时，也不会重新训练或分类文件。</p>
+      <p>说明只依据仓库内 README、脚本、Markdown 与 5 份已保存输出的 notebook；未写入仓库的数据集规模、用户数或未保存成绩均不在此编造。</p>
+      <nav class="footer-nav" aria-label="页脚">
+        <a href="index.html">首页</a>
+        <a href="pipeline.html">处理流程</a>
+        <a href="usage.html">代码使用</a>
+        <a href="notebooks.html">实验记录</a>
+        <a href="results.html">记录结果</a>
+        <a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc">GitHub 仓库</a>
+        <a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/LICENSE">MIT License</a>
+      </nav>
+      <p class="meta">Copyright (c) 2023 UnstoppableCurry · 预定发布地址 https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/</p>
+    </div>
+  </footer>
+  <script src="assets/site.js" defer></script>
+</body>
+</html>

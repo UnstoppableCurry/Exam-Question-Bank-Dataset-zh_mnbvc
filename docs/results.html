@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>记录结果 · 中文考试题库数据集</title>
+  <meta name="description" content="仅收录 notebook 已保存输出与仓库内 CSV 行数，不编造数据集规模或模型成绩。">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/results.html">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:title" content="记录结果 · 中文考试题库数据集">
+  <meta property="og:description" content="仅收录 notebook 已保存输出与仓库内 CSV 行数，不编造数据集规模或模型成绩。">
+  <meta property="og:url" content="https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/results.html">
+  <meta property="og:site_name" content="中文考试题库数据集展示">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="记录结果 · 中文考试题库数据集">
+  <meta name="twitter:description" content="仅收录 notebook 已保存输出与仓库内 CSV 行数，不编造数据集规模或模型成绩。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body class="">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-seal" aria-hidden="true">题</span>
+        <span class="brand-text">
+          <strong>中文考试题库数据集</strong>
+          <span>静态文档与结果展示</span>
+        </span>
+      </a>
+      <button class="nav-toggle" type="button" data-nav-toggle aria-controls="site-nav" aria-expanded="false">菜单</button>
+      <nav class="site-nav" id="site-nav" data-nav-panel aria-label="站点">
+        <ul>
+          <li><a href="index.html">首页</a></li>
+<li><a href="pipeline.html">处理流程</a></li>
+<li><a href="usage.html">代码使用</a></li>
+<li><a href="notebooks.html">实验记录</a></li>
+<li><a href="results.html" aria-current="page">记录结果</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <div class="wrap">
+      
+    <section class="page-hero">
+      <p class="kicker">RECORDED OUTPUTS</p>
+      <h1>记录结果</h1>
+      <p class="lead">这里只复述 notebook 已保存输出和当前仓库文件行数。不同 notebook、甚至同一 notebook 的不同单元格，可能对应不同运行批次。本站并列收录，不选取「官方成绩」。</p>
+    </section>
+    <section class="section">
+      <h2>分类数据集规模（create_datasets.ipynb）</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>保存输出</th><th>数值</th></tr></thead>
+          <tbody>
+            <tr><td>最初由 Markdown 目录组成的 train</td><td>2779 rows（<code>text</code>, <code>label</code>）</td></tr>
+            <tr><td>test</td><td>387 rows</td></tr>
+            <tr><td>之后从 disk 载入、含 <code>file_path</code> 的 train</td><td>13579 rows</td></tr>
+            <tr><td>追加 <code>negative_file</code> 262 个与 <code>positive_file</code> 149 个候选后的 train</td><td>13621 rows</td></tr>
+            <tr><td>最终 DatasetDict</td><td>train 13621 · test 387</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="meta">262 与 149 是 notebook 进度条扫描到的文件数；源码会跳过重名或解析失败项，因此增量是 13621 − 13579 = 42，不必等于 262 + 149。</p>
+    </section>
+    <section class="section">
+      <h2>训练记录（train_examination_paper_classifier.ipynb）</h2>
+      <p>模型：<code>CountVectorizer(tokenizer=jieba, ngram_range=(1, 2))</code> + <code>LogisticRegression(max_iter=100)</code>。读取 <code>ranWang/test_paper_textClassifier</code> 后，train 仍为 13621、test 为 387。源码以 <code>shuffle(7)</code> 打乱，再取 1/10 作验证：验证 1362，训练 12259。</p>
+      <p>同文件注释写有其它种子：<code>shuffle(36) Accuracy = 0.9787</code>、<code>shuffle(42) Accuracy = 0.9809</code>、<code>shuffle(100) Accuracy = 0.9838</code>。这是源码注释，不是单独的输出单元格。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>单元格</th><th>保存输出</th></tr></thead>
+          <tbody>
+            <tr><td>单独打印的 <code>accuracy</code></td><td>0.9794419970631424</td></tr>
+            <tr><td>随后 <code>tabulate</code> 表</td><td>Accuracy 0.98403 · Recall 0.971564 · Precision 0.97852 · F1 Score 0.97503</td></tr>
+            <tr><td>逻辑回归参数量</td><td>8227664</td></tr>
+            <tr><td>验证集推理耗时打印</td><td>time 18.944443702697754</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>两个 Accuracy 不一致，说明单元格可能并非同一次线性重跑。本站不调和它们。</p>
+    </section>
+    <section class="section">
+      <h2>类型分布快照 A · type_classifier_determine_keywords.ipynb</h2>
+      <p>读取 <code>../classifier.csv</code> 后打印 <code>[59579 rows x 4 columns]</code>；<code>threshold = 0.5</code> 时 <code>len(positive_df)</code> 为 10297。下面是该 notebook 的 <code>value_counts()</code>：</p>
+      <div class="bars" role="img" aria-label="类型计数条形图">
+            <div class="bar-row">
+              <span>数学</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:100%"></span></span>
+              <span>3102</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>indefinable</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:42%"></span></span>
+              <span>1308</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>医学</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:38%"></span></span>
+              <span>1172</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>公务员</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:36%"></span></span>
+              <span>1115</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>政治</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:22%"></span></span>
+              <span>669</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>化学</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:20%"></span></span>
+              <span>605</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>物理</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:18%"></span></span>
+              <span>546</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>地理</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:17%"></span></span>
+              <span>538</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>语文</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:14%"></span></span>
+              <span>439</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>历史</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:13%"></span></span>
+              <span>411</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>生物</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:8%"></span></span>
+              <span>254</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>理综</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:2%"></span></span>
+              <span>64</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>文综</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:2%"></span></span>
+              <span>63</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>心理</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:2%"></span></span>
+              <span>5</span>
+            </div>
+            </div>
+      <p class="meta">同 notebook 还扫描 <code>../data/docx/题库</code> 下 8285 个 <code>*.doc*</code> 以收集学科高频词。</p>
+    </section>
+    <section class="section">
+      <h2>类型分布快照 B · validation_results.ipynb</h2>
+      <p>该文件「类型统计」单元格给出另一组 <code>value_counts()</code>，未在该单元格打印总数。与快照 A 科目集合也不完全相同（出现 <code>other</code>，没有 <code>indefinable</code> / <code>心理</code>）。</p>
+      <div class="bars" role="img" aria-label="类型计数条形图">
+            <div class="bar-row">
+              <span>数学</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:100%"></span></span>
+              <span>3275</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>公务员</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:35%"></span></span>
+              <span>1144</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>医学</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:26%"></span></span>
+              <span>842</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>政治</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:24%"></span></span>
+              <span>795</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>地理</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:19%"></span></span>
+              <span>613</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>化学</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:18%"></span></span>
+              <span>597</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>生物</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:16%"></span></span>
+              <span>539</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>other</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:15%"></span></span>
+              <span>495</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>物理</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:14%"></span></span>
+              <span>459</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>语文</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:13%"></span></span>
+              <span>439</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>历史</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:13%"></span></span>
+              <span>420</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>理综</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:2%"></span></span>
+              <span>64</span>
+            </div>
+            
+            <div class="bar-row">
+              <span>文综</span>
+              <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width:2%"></span></span>
+              <span>63</span>
+            </div>
+            </div>
+    </section>
+    <section class="section">
+      <h2>题库路径核验（validation_results.ipynb）</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>源码注释 / 输出</th><th>数值</th></tr></thead>
+          <tbody>
+            <tr><td>路径含 <code>/题库</code> 的全部文件</td><td>8275</td></tr>
+            <tr><td>其中路径还含 <code>/学前教辅资料</code></td><td>3840</td></tr>
+            <tr><td>上述两数之比</td><td>0.46404833836858006</td></tr>
+            <tr><td>路径含 <code>/题库</code> 的 positive</td><td>4077</td></tr>
+            <tr><td>题库中排除「小品」「学前教辅资料」后的全部</td><td>4409</td></tr>
+            <tr><td>同上条件的 positive</td><td>4074</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>随后单元格打印了路径推测与模型结果不一致的文件，以及用文件名关键词查找的疑似假阴性 / 假阳性。完整清单见 <a href="notebooks/validation.html">静态渲染页</a> 或原 notebook。</p>
+    </section>
+    <section class="section">
+      <h2>随机抽检（random_test_model.ipynb）</h2>
+      <p>已保存的一次运行对 100 个文件做 <code>tqdm</code> 扫描，并打印置信度不在 0.00 / 1.00 的样本，例如简历模板 0.01、一份讲义 0.90、可行性报告 0.98。notebook 没有汇总准确率。后继单元格展示了中医「精、气、血、津液、神」讲义正文，并提供拷贝到 <code>negative_file/</code> 或 <code>positive_file/</code> 的辅助函数。</p>
+    </section>
+    
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p><strong>本站是静态文档 / 结果展示</strong>，不是可交互运行时，也不会重新训练或分类文件。</p>
+      <p>说明只依据仓库内 README、脚本、Markdown 与 5 份已保存输出的 notebook；未写入仓库的数据集规模、用户数或未保存成绩均不在此编造。</p>
+      <nav class="footer-nav" aria-label="页脚">
+        <a href="index.html">首页</a>
+        <a href="pipeline.html">处理流程</a>
+        <a href="usage.html">代码使用</a>
+        <a href="notebooks.html">实验记录</a>
+        <a href="results.html">记录结果</a>
+        <a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc">GitHub 仓库</a>
+        <a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/LICENSE">MIT License</a>
+      </nav>
+      <p class="meta">Copyright (c) 2023 UnstoppableCurry · 预定发布地址 https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/</p>
+    </div>
+  </footer>
+  <script src="assets/site.js" defer></script>
+</body>
+</html>

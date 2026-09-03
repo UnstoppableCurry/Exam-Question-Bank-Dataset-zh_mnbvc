@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>学科关键词与类型检查 · 静态 notebook</title>
+  <meta name="description" content="统计各学科高频词，并读取 classifier.csv 做类型分布与路径抽查。">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/notebooks/type-classifier.html">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:title" content="学科关键词与类型检查 · 静态 notebook">
+  <meta property="og:description" content="统计各学科高频词，并读取 classifier.csv 做类型分布与路径抽查。">
+  <meta property="og:url" content="https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/notebooks/type-classifier.html">
+  <meta property="og:site_name" content="中文考试题库数据集展示">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="学科关键词与类型检查 · 静态 notebook">
+  <meta name="twitter:description" content="统计各学科高频词，并读取 classifier.csv 做类型分布与路径抽查。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body class="nb-page">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="../index.html">
+        <span class="brand-seal" aria-hidden="true">题</span>
+        <span class="brand-text">
+          <strong>中文考试题库数据集</strong>
+          <span>静态文档与结果展示</span>
+        </span>
+      </a>
+      <button class="nav-toggle" type="button" data-nav-toggle aria-controls="site-nav" aria-expanded="false">菜单</button>
+      <nav class="site-nav" id="site-nav" data-nav-panel aria-label="站点">
+        <ul>
+          <li><a href="../index.html">首页</a></li>
+<li><a href="../pipeline.html">处理流程</a></li>
+<li><a href="../usage.html">代码使用</a></li>
+<li><a href="../notebooks.html">实验记录</a></li>
+<li><a href="../results.html">记录结果</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <div class="wrap">
+      
+    <section class="page-hero">
+      <p class="kicker">NOTEBOOK</p>
+      <h1>学科关键词与类型检查</h1>
+      <p class="lead">统计各学科高频词，并读取 classifier.csv 做类型分布与路径抽查。 本页由 <code>notebook/type_classifier_determine_keywords.ipynb</code> 的已保存单元格静态渲染，没有重新执行内核。</p>
+      <p class="actions">
+        <a class="button button-primary" href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/type_classifier_determine_keywords.ipynb">GitHub 源文件</a>
+        <a class="button button-ghost" href="https://nbviewer.org/github/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/type_classifier_determine_keywords.ipynb">nbviewer</a>
+        <a class="button button-ghost" href="../notebooks.html">返回目录</a>
+      </p>
+    </section>
+    <p class="note">过长输出（尤其是文件路径清单和词汇表）已截断，以免 GitHub Pages 产物过大。数字与表格保持原样。</p>
+    <article class="nb-cell"><p class="nb-label">Markdown · 1</p><h1>准备方法</h1></article>
+            <article class="nb-cell">
+              <p class="nb-label">Code · 2 · In[1]</p>
+              <pre><code>import jieba
+from collections import Counter
+from pathlib import Path
+from tqdm import tqdm
+import os
+import sys
+
+sys.path.append(&#x27;../&#x27;)
+
+from examination_paper_classifier import extract_text
+from examination_paper_classifier import is_all_chinese_or_english
+from examination_paper_classifier import classify_paper_type
+
+def most_common_words(text, n=40):
+    words = jieba.cut(text)
+    words = filter(lambda word: len(word) &gt; 1 and is_all_chinese_or_english(word), words)
+    word_count = Counter(words)
+    most_common = word_count.most_common(n)
+    most_common_dict = dict(most_common)
+    return most_common_dict
+
+
+def add_dicts(dicts_list):
+    result_dict = {}
+    for d in dicts_list:
+        for key, value in d.items():
+            if key in result_dict:
+                result_dict[key] += value
+            else:
+                result_dict[key] = value
+            
+    return sorted(result_dict.items(), key=lambda x: x[1], reverse=True)
+
+
+def search_most_keywords_by_file(file_path):
+    file_path = Path(file_path)
+    try:
+        text = extract_text(str(file_path), file_path.suffix)
+        return most_common_words(text)
+    except:
+        return {}
+    
+    
+def search_most_keywords_by_dir(dir_path, file_name_keyword=[]):
+    dicts_list = []
+    for file_path in tqdm(list(Path(dir_path).rglob(&#x27;*.doc*&#x27;))):
+        file_name = file_path.name
+        if not file_name_keyword:
+            dicts_list.append(search_most_keywords_by_file(file_path))
+        elif any([word in file_name for word in file_name_keyword]):
+            dicts_list.append(search_most_keywords_by_file(file_path))
+            
+    return add_dicts(dicts_list)</code></pre>
+              
+            </article>
+            <article class="nb-cell"><p class="nb-label">Markdown · 3</p><h1>首先查看各种类型试卷所需要的关键词</h1></article>
+            <article class="nb-cell">
+              <p class="nb-label">Code · 4 · In[127]</p>
+              <pre><code>all_categorys_total = {&quot;化学&quot;:[], &quot;历史&quot;:[], &quot;地理&quot;:[], &quot;政治&quot;:[], &quot;数学&quot;:[], &quot;物理&quot;:[], &quot;生物&quot;:[], &quot;语文&quot;:[] }
+
+
+for file_path in tqdm(list(Path(&quot;../data/docx/题库&quot;).rglob(&#x27;*.doc*&#x27;))):
+    file_name = file_path.name
+    
+    for category in all_categorys_total:
+        if category in file_name:
+            all_categorys_total[category].append(search_most_keywords_by_file(file_path))</code></pre>
+              <pre class="nb-output"><code>100%|███████████████████████████████████████████████████████████████████████████████████████████████████| 8285/8285 [01:56&lt;00:00, 70.99it/s]
+</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 5 · In[128]</p>
+              <pre><code>for category in all_categorys_total:
+    keywords_total = add_dicts(all_categorys_total[category])[:20]
+    print(category)
+    print(keywords_total)
+    print()</code></pre>
+              <pre class="nb-output"><code>化学
+[(&#x27;反应&#x27;, 12393), (&#x27;pic&#x27;, 11694), (&#x27;溶液&#x27;, 8524), (&#x27;生成&#x27;, 4338), (&#x27;正确&#x27;, 3100), (&#x27;下列&#x27;, 3069), (&#x27;mol&#x27;, 3069), (&#x27;元素&#x27;, 2812), (&#x27;物质&#x27;, 2766), (&#x27;发生&#x27;, 2744), (&#x27;离子&#x27;, 2621), (&#x27;答案&#x27;, 2377), (&#x27;方程式&#x27;, 2218), (&#x27;OH&#x27;, 1959), (&#x27;分析&#x27;, 1857), (&#x27;氧化&#x27;, 1826), (&#x27;结构&#x27;, 1776), (&#x27;实验&#x27;, 1768), (&#x27;加入&#x27;, 1616), (&#x27;化学&#x27;, 1612)]
+
+历史
+[(&#x27;材料&#x27;, 2324), (&#x27;中国&#x27;, 1491), (&#x27;答案&#x27;, 968), (&#x27;历史&#x27;, 893), (&#x27;发展&#x27;, 887), (&#x27;根据&#x27;, 810), (&#x27;所学&#x27;, 802), (&#x27;结合&#x27;, 799), (&#x27;经济&#x27;, 735), (&#x27;知识&#x27;, 718), (&#x27;国家&#x27;, 674), (&#x27;社会&#x27;, 493), (&#x27;世纪&#x27;, 486), (&#x27;世界&#x27;, 466), (&#x27;美国&#x27;, 464), (&#x27;政治&#x27;, 440), (&#x27;英国&#x27;, 331), (&#x27;主要&#x27;, 325), (&#x27;要求&#x27;, 322), (&#x27;问题&#x27;, 316)]
+
+地理
+[(&#x27;pic&#x27;, 977), (&#x27;主要&#x27;, 948), (&#x27;地区&#x27;, 826), (&#x27;发展&#x27;, 721), (&#x27;我国&#x27;, 657), (&#x27;城市&#x27;, 598), (&#x27;影响&#x27;, 583), (&#x27;回答&#x27;, 480), (&#x27;原因&#x27;, 425), (&#x27;形成&#x27;, 405), (&#x27;分布&#x27;, 389), (&#x27;答案&#x27;, 370), (&#x27;完成&#x27;, 358), (&#x27;问题&#x27;, 348), (&#x27;变化&#x27;, 343), (&#x27;经济&#x27;, 325), (&#x27;人口&#x27;, 305), (&#x27;材料&#x27;, 283), (&#x27;分析&#x27;, 272), (&#x27;错误&#x27;, 251)]
+
+政治
+[(&#x27;发展&#x27;, 2362), (&#x27;文化&#x27;, 1683), (&#x27;材料&#x27;, 1354), (&#x27;中国&#x27;, 1339), (&#x27;经济&#x27;, 1314), (&#x27;社会&#x27;, 1094), (&#x27;我国&#x27;, 1090), (&#x27;国家&#x27;, 994), (&#x27;企业&#x27;, 761), (&#x27;问题&#x27;, 659), (&#x27;人民&#x27;, 658), (&#x27;政府&#x27;, 626), (&#x27;答案&#x27;, 600), (&#x27;运用&#x27;, 596), (&#x27;知识&#x27;, 572), (&#x27;说明&#x27;, 536), (&#x27;本题&#x27;, 485), (&#x27;生活&#x27;, 457), (&#x27;要求&#x27;, 413), (&#x27;正确&#x27;, 386)]
+
+数学
+[(&#x27;pic&#x27;, 228584), (&#x27;函数&#x27;, 19788), (&#x27;所以&#x27;, 15859), (&#x27;直线&#x27;, 14678), (&#x27;方程&#x27;, 12756), (&#x27;已知&#x27;, 11496), (&#x27;一个&#x27;, 10284), (&#x27;平面&#x27;, 9942), (&#x27;分析&#x27;, 9580), (&#x27;解答&#x27;, 9450), (&#x27;答案&#x27;, 8137), (&#x27;考查&#x27;, 8024), (&#x27;解析&#x27;, 7857), (&#x27;根据&#x27;, 6266), (&#x27;AB&#x27;, 6249), (&#x27;问题&#x27;, 6036), (&#x27;本题&#x27;, 5896), (&#x27;点评&#x27;, 5190), (&#x27;分别&#x27;, 5122), (&#x27;即可&#x27;, 4984)]
+
+物理
+[(&#x27;pic&#x27;, 13009), (&#x27;运动&#x27;, 3400), (&#x27;方向&#x27;, 3238), (&#x27;大小&#x27;, 2727), (&#x27;速度&#x27;, 2695), (&#x27;根据&#x27;, 2223), (&#x27;质量&#x27;, 1784), (&#x27;正确&#x27;, 1545), (&#x27;分析&#x27;, 1534), (&#x27;实验&#x27;, 1456), (&#x27;过程&#x27;, 1431), (&#x27;时间&#x27;, 1313), (&#x27;粒子&#x27;, 1275), (&#x27;加速度&#x27;, 1260), (&#x27;如图&#x27;, 1204), (&#x27;磁场&#x27;, 1191), (&#x27;水平&#x27;, 1148), (&#x27;气体&#x27;, 1016), (&#x27;小球&#x27;, 993), (&#x27;电阻&#x27;, 951)]
+
+生物
+[(&#x27;细胞&#x27;, 2869), (&#x27;基因&#x27;, 1498), (&#x27;下列&#x27;, 1214), (&#x27;pic&#x27;, 1144), (&#x27;实验&#x27;, 1053), (&#x27;过程&#x27;, 969), (&#x27;进行&#x27;, 938), (&#x27;染色体&#x27;, 889), (&#x27;正确&#x27;, 855), (&#x27;植物&#x27;, 840), (&#x27;DNA&#x27;, 822), (&#x27;产生&#x27;, 749), (&#x27;错误&#x27;, 640), (&#x27;生物&#x27;, 627), (&#x27;叙述&#x27;, 593), (&#x27;答案&#x27;, 580), (&#x27;分析&#x27;, 522), (&#x27;可以&#x27;, 425), (&#x27;合成&#x27;, 422), (&#x27;通过&#x27;, 416)]
+
+语文
+[(&#x27;一个&#x27;, 1690), (&#x27;我们&#x27;, 1324), (&#x27;阅读&#x27;, 1250), (&#x27;自己&#x27;, 1079), (&#x27;下列&#x27;, 1058), (&#x27;解析&#x27;, 983), (&#x27;可以&#x27;, 979), (&#x27;分析&#x27;, 883), (&#x27;句子&#x27;, 839), (&#x27;词语&#x27;, 833), (&#x27;详解&#x27;, 808), (&#x27;没有&#x27;, 759), (&#x27;一项&#x27;, 719), (&#x27;作者&#x27;, 717), (&#x27;文章&#x27;, 714), (&#x27;下面&#x27;, 692), (&#x27;ng&#x27;, 672), (&#x27;内容&#x27;, 627), (&#x27;什么&#x27;, 625), (&#x27;描写&#x27;, 620)]
+
+</code></pre>
+            </article>
+            <article class="nb-cell"><p class="nb-label">Markdown · 6</p><h1>读取测试数据看是否存在偏差(运行完分类脚本后)</h1></article>
+            <article class="nb-cell">
+              <p class="nb-label">Code · 7 · In[332]</p>
+              <pre><code>import pandas as pd
+
+all_file_df = pd.read_csv(&quot;../classifier.csv&quot;)
+
+all_file_df[&#x27;probability&#x27;] = pd.to_numeric(all_file_df[&#x27;probability&#x27;])
+
+threshold = 0.5
+
+positive_df = all_file_df[all_file_df[&#x27;probability&#x27;] &gt; threshold]
+negative_df = all_file_df[all_file_df[&#x27;probability&#x27;] &lt;= threshold]
+
+all_file_df</code></pre>
+              <div class="nb-html-output"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>file_path</th>
+      <th>target_path</th>
+      <th>probability</th>
+      <th>type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>1.211337e-24</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>6.115465e-26</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>1.424632e-14</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>6.168316e-12</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>3.395665e-19</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>59574</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>9.999979e-01</td>
+      <td>indefinable</td>
+    </tr>
+    <tr>
+      <th>59575</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>9.993577e-01</td>
+      <td>indefinable</td>
+    </tr>
+    <tr>
+      <th>59576</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>9.973776e-01</td>
+      <td>indefinable</td>
+    </tr>
+    <tr>
+      <th>59577</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>9.999971e-01</td>
+      <td>indefinable</td>
+    </tr>
+    <tr>
+      <th>59578</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>7.716563e-06</td>
+      <td>NaN</td>
+    </tr>
+  </tbody>
+</table>
+<p>59579 rows × 4 columns</p>
+</div></div>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 8 · In[333]</p>
+              <pre><code>len(positive_df)</code></pre>
+              <pre class="nb-output"><code>10297</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 9 · In[334]</p>
+              <pre><code>positive_df[&#x27;type&#x27;].value_counts()</code></pre>
+              <pre class="nb-output"><code>type
+数学             3102
+indefinable    1308
+医学             1172
+公务员            1115
+政治              669
+化学              605
+物理              546
+地理              538
+语文              439
+历史              411
+生物              254
+理综               64
+文综               63
+心理                5
+Name: count, dtype: int64</code></pre>
+            </article>
+            <article class="nb-cell"><p class="nb-label">Markdown · 10</p><h1>通过文件路径以及文件名验证数据准确性</h1></article>
+            <article class="nb-cell">
+              <p class="nb-label">Code · 11 · In[347]</p>
+              <pre><code>class_name = &quot;政治&quot;
+
+print(len(positive_df[(positive_df[&quot;type&quot;] == class_name) &amp; ~positive_df[&quot;file_path&quot;].str.contains(class_name)]))
+
+for _, row in positive_df.iterrows():
+    if row[&#x27;type&#x27;] == class_name and class_name not in row[&#x27;file_path&#x27;]:
+        print(f&quot;{row[&#x27;type&#x27;]} {row[&#x27;file_path&#x27;]}&quot;)
+        print()</code></pre>
+              <pre class="nb-output"><code>410
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年2月份更新】4900篇各类材料合集/2022年吉林省通化市第三季度梅河新区招聘人才考试精选题【官方抖音号：资深秘书】.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年2月份更新】4900篇各类材料合集/2022年吉林松原市秋季基层治理专干招聘考试《通用知识》精选题【官方抖音号：资深秘书】.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年2月份更新】4900篇各类材料合集/2022年辽宁云南第四季度事业单位联考ABC类全部《职测》试题【官方抖音号：资深秘书】.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年2月份更新】4900篇各类材料合集/2022年四川成都第三季度事业单位考试《公共基础知识》精选题【官方抖音号：资深秘书】.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年2月份更新】4900篇各类材料合集/2022年辽宁大连市秋季事业单位《职业能力倾向测验》试题【官方抖音号：资深秘书】.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年1月份更新】党风廉政/党风廉政测试题/《中国共产党纪律处分条例》测试题【官方抖音号：资深秘书】.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年5月份更新】各类汇编/2023年5月份/每日更新/20230520/2023年党建工作应知应会知识测试题【官方抖音号：资深秘书】.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年5月份更新】各类汇编/2023年5月份/5月每日更新/5月25日已发打包/2023年党建工作应知应会知识测试题（题库）.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年5月份更新】各类汇编/2023年5月份/5月每日更新/5月23日已发打包/2023年党建工作应知应会知识测试题【官方抖音号：资深秘书】.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年5月份更新】各类汇编/2023年3月份更新/每日更新/20230320/党员干部廉洁测试卷50题（含答案）【官方抖音号：资深秘书】.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年4月份更新】4300篇各类材料合集/（9篇）关于文秘基础知识试题以及答案汇编【唯一抖音号：资深秘书】.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年4月份更新】4300篇各类材料合集/(50题)2023年关于党员干部廉洁测试卷（含答案）【唯一抖音号：资深秘书】.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年4月份更新】4300篇各类材料合集/（50题）2023年关于党员干部廉洁测试卷（含答案）【唯一抖音号：资深秘书】.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年2月份更新】党章学习/党章党规党纪应知应会知识题库【官方抖音号：资深秘书】.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年5月份更新】党建（国企）/国企中层管理干部任前廉洁知识考试试题【官方抖音号：资深秘书】.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年5月份更新】4400篇各类材料合集/XX县科级干部任前廉政知识测试题库(2023年4月)【官方抖音号：资深秘书】.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年5月份更新】4400篇各类材料合集/党建工作应知应会测试题库【官方抖音号：资深秘书】.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年5月份更新】4400篇各类材料合集/2023年“安全生产月”主题知识竞赛测试题（附答案）【官方抖音号：资深秘书】.docx
+
+政治 ./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年5月份更新】4400篇各类材料合集/2023年4月最新某县科级干部任前廉政知识测试题库【官方抖音号：资深秘书】.docx
+
+政治 ./data/docx/d
+…</code></pre><p class="meta">输出已截断：此处显示前 2800 个字符，原文约 57785 个字符。完整内容请打开 GitHub 或 nbviewer 上的 notebook。</p>
+            </article>
+            <article class="nb-cell"><p class="nb-label">Markdown · 12</p><h1>在本地文件夹内搜索关键词的数量</h1></article>
+            <article class="nb-cell">
+              <p class="nb-label">Code · 13 · In[11]</p>
+              <pre><code>search_most_keywords_by_dir(&quot;../data/docx/202307/中小学资源(1)/【中小学课程】/高中课程/北京四中高中历史精品全套/四中高三/&quot;, {})</code></pre>
+              <pre class="nb-output"><code>100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 23/23 [00:00&lt;00:00, 49.60it/s]
+</code></pre>
+<pre class="nb-output"><code>[(&#x27;中国&#x27;, 133),
+ (&#x27;发展&#x27;, 130),
+ (&#x27;经济&#x27;, 97),
+ (&#x27;资本主义&#x27;, 81),
+ (&#x27;政治&#x27;, 74),
+ (&#x27;国家&#x27;, 68),
+ (&#x27;革命&#x27;, 66),
+ (&#x27;时期&#x27;, 58),
+ (&#x27;思想&#x27;, 58),
+ (&#x27;民主&#x27;, 58),
+ (&#x27;英国&#x27;, 54),
+ (&#x27;世界&#x27;, 52),
+ (&#x27;世纪&#x27;, 51),
+ (&#x27;社会&#x27;, 51),
+ (&#x27;资产阶级&#x27;, 51),
+ (&#x27;建立&#x27;, 49),
+ (&#x27;制度&#x27;, 45),
+ (&#x27;形成&#x27;, 45),
+ (&#x27;日本&#x27;, 42),
+ (&#x27;法国&#x27;, 40),
+ (&#x27;民族&#x27;, 38),
+ (&#x27;美国&#x27;, 37),
+ (&#x27;战争&#x27;, 33),
+ (&#x27;社会主义&#x27;, 32),
+ (&#x27;文化&#x27;, 32),
+ (&#x27;人民&#x27;, 32),
+ (&#x27;改革&#x27;, 31),
+ (&#x27;统治&#x27;, 30),
+ (&#x27;工业革命&#x27;, 30),
+ (&#x27;宪法&#x27;, 27),
+ (&#x27;历史&#x27;, 26),
+ (&#x27;工业&#x27;, 26),
+ (&#x27;近代&#x27;, 24),
+ (&#x27;雅典&#x27;, 23),
+ (&#x27;西方&#x27;, 23),
+ (&#x27;年代&#x27;, 22),
+ (&#x27;出现&#x27;, 22),
+ (&#x27;成立&#x27;, 22),
+ (&#x27;运动&#x27;, 22),
+ (&#x27;意义&#x27;, 21),
+ (&#x27;公民&#x27;, 21),
+ (&#x27;地位&#x27;, 21),
+ (&#x27;西欧&#x27;, 21),
+ (&#x27;宗教改革&#x27;, 21),
+ (&#x27;内容&#x27;, 20),
+ (&#x27;格局&#x27;, 20),
+ (&#x27;影响&#x27;, 20),
+ (&#x27;帝国&#x27;, 20),
+ (&#x27;拿破仑&#x27;, 20),
+ (&#x27;欧洲&#x27;, 18),
+ (&#x27;共和国&#x27;, 18),
+ (&#x27;史观&#x27;, 17),
+ (&#x27;皇帝&#x27;, 17),
+ (&#x27;议会&#x27;, 17),
+ (&#x27;农民&#x27;, 17),
+ (&#x27;建设&#x27;, 16),
+ (&#x27;生产&#x27;, 16),
+ (&#x27;教会&#x27;, 16),
+ (&#x27;俄国&#x27;, 16),
+ (&#x27;土地&#x27;, 16),
+ (&#x27;冷战&#x27;, 15),
+ (&#x27;封建&#x27;, 15),
+ (&#x27;进入&#x27;, 15),
+ (&#x27;提出&#x27;, 14),
+ (&#x27;实行&#x27;, 14),
+ (&#x27;标志&#x27;, 14),
+ (&#x27;反对&#x27;, 14),
+ (&#x27;辛亥革命&#x27;, 14),
+ (&#x27;德意志&#x27;, 14),
+ (&#x27;获得&#x27;, 14),
+ (&#x27;时间&#x27;, 13),
+ (&#x27;主要&#x27;, 13),
+ (&#x27;德国&#x27;, 13),
+ (&#x27;两极&#x27;, 13),
+ (&#x27;美苏&#x27;, 13),
+ (&#x27;性质&#x27;, 13),
+ (&#x27;清政府&#x27;, 13),
+ (&#x27;推动&#x27;, 13),
+ (&#x27;自由&#x27;, 13),
+ (&#x27;复习&#x27;, 13),
+ (&#x27;上帝&#x27;, 13),
+ (&#x27;确立&#x27;, 13),
+ (&#x27;开放&#x27;, 12),
+ (&#x27;重要&#x27;, 12),
+ (&#x27;战役&#x27;, 12),
+ (&#x27;爆发&#x27;, 12),
+ (&#x27;兴起&#x27;, 12),
+ (&#x27;失败&#x27;, 12),
+ (&#x27;开始&#x27;, 12),
+ (&#x27;巴黎公社&#x27;, 12),
+ (&#x27;主张&#x27;, 12),
+ (&#x27;平等&#x27;, 12),
+ (&#x27;政府&#x27;, 12),
+ (&#x27;明清&#x27;, 12),
+ (&#x27;生产力&#x27;, 11),
+ (&#x27;希腊&#x27;, 11),
+ (&#x27;权力&#x27;, 11),
+ (&#x27;国际&#x27;, 11),
+ (&#x27;成为&#x27;, 11),
+ (&#x27;企业&#x27;, 11),
+ (&#x27;侵华&#x27;, 11),
+ (&#x27;马克思主义&#x27;, 11),
+ (&#x27;魏晋&#x27;, 11),
+ (&#x27;第二次世界大战&#x27;, 10),
+ (&#x27;苏联&#x27;, 10),
+ (&#x27;洋务运动&#x27;, 10),
+ (&#x27;李鸿章&#x27;, 10),
+ (&#x27;机器&#x27;, 10),
+ (&#x27;孙中山&#x27;, 10),
+ (&#x27;帝国主义&#x27;, 10),
+ (&#x27;条约&#x27;, 10),
+ (&#x27;鸦片战争&#x27;, 10),
+ (&#x27;使用&#x27;, 10),
+ (&#x27;进行&#x27;, 10),
+ (&#x27;工人&#x27;, 10),
+ (&#x27;颁布&#x27;, 10),
+ (&#x27;专题&#x27;, 10),
+ (&#x27;隋唐&#x27;, 10),
+ (&#x27;元朝&#x27;, 10),
+ (&#x27;邓小平&#x27;, 9),
+ (&#x27;古代&#x27;, 9),
+ (&#x27;我们&#x27;, 9),
+ (&#x27;多极化&#x27;, 9),
+ (&#x27;主义&#x27;, 9),
+ (&#x27;传统&#x27;, 9),
+ (&#x27;第二次&#x27;, 9),
+ (&#x27;基本&#x27;, 9),
+ (&#x27;背景&#x27;, 9),
+ (&#x27;信仰&#x27;, 9),
+ (&#x27;文学&#x27;, 9),
+ (&#x27;巴黎&#x27;, 9),
+ (&#x27;原则&#x27;, 9),
+ (&#x27;南北朝&#x27;, 9),
+ (&#x27;措施&#x27;, 9),
+ (&#x27;唐朝&#x27;, 9),
+ (&#x27;问题&#x27;, 8),
+ (&#x27;有利于&#x27;, 8),
+ (&#x27;中国共产党&#x27;, 8),
+ (&#x27;理论&#x27;, 8),
+ (&#x27;法西斯&#x27;, 8),
+ (&#x27;战场&#x27;, 8),
+ (&#x27;体系&#x27;, 8),
+ (&#x27;产生&#x27;, 8),
+ (&#x27;创办&#x27;, 8),
+ (&#x27;纲领&#x27;, 8),
+ (&#x27;世界市场&#x27;, 8),
+ (&#x27;要求&#x27;, 8),
+ (&#x27;市场&#x27;, 8),
+ (&#x27;工人阶级&#x27;, 8),
+ (&#x27;无产阶级&#x27;, 8),
+ (&#x27;诞生&#x27;, 8),
+ (&#x27;人们&#x27;, 8),
+ (&#x27;北魏&#x27;, 8),
+ (&#x27;三省&#x27;, 8),
+ (&#x27;商业&#x27;, 8),
+ (&#x27;加强&#x27;, 8),
+ (&#x27;地方&#x27;, 8),
+ (&#x27;中央&#x27;, 8),
+ (&#x27;城市&#x27;, 7),
+ (&#x27;我国&#x27;, 7),
+ (&#x27;方针&#x27;, 7),
+ (&#x27;古希腊&#x27;, 7),
+ (&#x27;政策&#x27;, 7),
+ (&#x27;人类&#x27;, 7),
+ (&#x27;列强&#x27;, 7),
+ (&#x27;扩张&#x27;, 7),
+ (&#x27;解体&#x27;, 7),
+ (&#x27;二战&#x27;, 7),
+ (&#x27;外国&#x27;, 7),
+ (&#x27;斗争&#x27;, 7),
+ (&#x27;北京&#x27;, 7),
+ (&#x27;推翻&#x27;, 7),
+ (&#x27;近代史&#x27;, 7),
+ (&#x27;权威&#x27;, 7),
+ (&#x27;精神&#x27;, 7),
+ (&#x27;首相&#x27;, 7),
+ (&#x27;代表&#x27;, 7),
+ (&#x27;通过&#x27;, 7),
+ (&#x27;法兰西&#x27;, 7),
+ (&#x27;大革命&#x27;, 7),
+ (&#x27;法律&#x27;, 7),
+ (&#x27;君主专制&#x27;, 7),
+ (&#x27;农奴制&#x27;, 7),
+ (&#x27;明治维新&#x27;, 7),
+ (&#x27;沙皇&#x27;, 7),
+ (&#x27;废除&#x27;, 7),
+ (&#x27;任务&#x27;, 7),
+ (&#x27;作用&#x27;, 7),
+ (&#x27;清朝&#x27;, 7),
+ (&#x27;严重&#x27;, 7),
+ (&#x27;内阁&#x27;, 7),
+ (&#x27;手工业&#x27;, 7),
+ (&#x27;宋代&#x27;, 7),
+ (&#x27;邓小平理论&#x27;, 6),
+ (&#x27;经济体制&#x27;, 6),
+ (&#x27;经济特区&#x27;, 6),
+ (&#x27;关系&#x27;, 6),
+ (&#x27;决定&#x27;, 6),
+ (&#x27;文明&#x27;, 6),
+ (&#x27;城邦&#x27;, 6),
+ (&#x27;直接&#x27;, 6),
+ (&#x27;会议&#x27;, 6),
+ (&#x27;组成&#x27;, 6),
+ (&#x27;胜利&#x27;, 6),
+ (&#x27;结束&#x27;, 6),
+ (&#x27;近代化&#x27;, 6),
+ (&#x27;袁世凯&#x27;, 6),
+ (&#x27;八国联军&#x27;, 6),
+ (&#x27;中华民国&#x27;, 6),
+ (&#x27;半殖民地&#x27;, 6),
+ (&#x27;两次&#x27;, 6),
+ (&#x27;联系&#x27;, 6),
+ (&#x27;第一国际&#x27;, 6),
+ (&#x27;圣经&#x27;, 6),
+ (&#x27;路德&#x27;, 6),
+ (&#x27;加尔文&#x27;, 6),
+ (&#x27;第一&#x27;, 6
+…</code></pre><p class="meta">输出已截断：此处显示前 2800 个字符，原文约 6556 个字符。完整内容请打开 GitHub 或 nbviewer 上的 notebook。</p>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 14 · In[8]</p>
+              <pre><code>search_most_keywords_by_file(&quot;../data/docx/202307/系统分析师(高级)/系统分析师参考书籍/系统分析师历年试题及答案/系统分析师历年试题及答案/2006年下半年系统分析师试卷及答案和分析(24页).doc&quot;)</code></pre>
+              <pre class="nb-output"><code>{&#x27;试题&#x27;: 79,
+ &#x27;系统&#x27;: 61,
+ &#x27;问题&#x27;: 53,
+ &#x27;分析&#x27;: 43,
+ &#x27;应用&#x27;: 35,
+ &#x27;进行&#x27;: 34,
+ &#x27;技术&#x27;: 31,
+ &#x27;企业&#x27;: 28,
+ &#x27;可以&#x27;: 26,
+ &#x27;采用&#x27;: 26,
+ &#x27;信息&#x27;: 26,
+ &#x27;网络&#x27;: 25,
+ &#x27;需求&#x27;: 24,
+ &#x27;软件&#x27;: 23,
+ &#x27;SOA&#x27;: 23,
+ &#x27;过程&#x27;: 22,
+ &#x27;计算机&#x27;: 22,
+ &#x27;工作&#x27;: 21,
+ &#x27;模型&#x27;: 21,
+ &#x27;关于&#x27;: 20,
+ &#x27;项目&#x27;: 20,
+ &#x27;要求&#x27;: 20,
+ &#x27;方法&#x27;: 19,
+ &#x27;开发&#x27;: 19,
+ &#x27;一个&#x27;: 18,
+ &#x27;pic&#x27;: 17,
+ &#x27;关系&#x27;: 17,
+ &#x27;论述&#x27;: 16,
+ &#x27;考生&#x27;: 16,
+ &#x27;根据&#x27;: 15,
+ &#x27;实现&#x27;: 15,
+ &#x27;数据&#x27;: 15,
+ &#x27;表示&#x27;: 15,
+ &#x27;环境&#x27;: 15,
+ &#x27;贷款&#x27;: 15,
+ &#x27;任务&#x27;: 14,
+ &#x27;有关&#x27;: 14,
+ &#x27;以下&#x27;: 13,
+ &#x27;描述&#x27;: 13,
+ &#x27;风险&#x27;: 13}</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 15 · In[13]</p>
+              <pre><code>file_path = &quot;../data/docx/202307/中小学资源(1)/【中小学课程】/高中课程/北京四中高中历史精品全套/四中高一历史/2/06.doc&quot;
+
+classify_paper_type(extract_text(file_path, &quot;.&quot;+file_path.split(&quot;.&quot;)[-1]), file_name=file_path.split(&quot;/&quot;)[-1], debug=True)</code></pre>
+              <pre class="nb-output"><code>[(&#x27;政治&#x27;, 107), (&#x27;历史&#x27;, 81), (&#x27;公务员&#x27;, 55), (&#x27;地理&#x27;, 14), (&#x27;医学&#x27;, 0), (&#x27;化学&#x27;, 0), (&#x27;数学&#x27;, 0), (&#x27;物理&#x27;, 0), (&#x27;生物&#x27;, 0), (&#x27;语文&#x27;, 0), (&#x27;心理&#x27;, 0), (&#x27;理综&#x27;, 0), (&#x27;文综&#x27;, 0), (&#x27;other&#x27;, 0)]
+</code></pre>
+<pre class="nb-output"><code>&#x27;政治&#x27;</code></pre>
+            </article>
+            
+    
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p><strong>本站是静态文档 / 结果展示</strong>，不是可交互运行时，也不会重新训练或分类文件。</p>
+      <p>说明只依据仓库内 README、脚本、Markdown 与 5 份已保存输出的 notebook；未写入仓库的数据集规模、用户数或未保存成绩均不在此编造。</p>
+      <nav class="footer-nav" aria-label="页脚">
+        <a href="../index.html">首页</a>
+        <a href="../pipeline.html">处理流程</a>
+        <a href="../usage.html">代码使用</a>
+        <a href="../notebooks.html">实验记录</a>
+        <a href="../results.html">记录结果</a>
+        <a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc">GitHub 仓库</a>
+        <a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/LICENSE">MIT License</a>
+      </nav>
+      <p class="meta">Copyright (c) 2023 UnstoppableCurry · 预定发布地址 https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/</p>
+    </div>
+  </footer>
+  <script src="../assets/site.js" defer></script>
+</body>
+</html>

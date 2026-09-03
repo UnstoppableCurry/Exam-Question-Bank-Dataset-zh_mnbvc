@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>训练试卷分类器 · 静态 notebook</title>
+  <meta name="description" content="jieba + CountVectorizer + LogisticRegression，并在划分出的验证集上记录指标。">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/notebooks/train.html">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:title" content="训练试卷分类器 · 静态 notebook">
+  <meta property="og:description" content="jieba + CountVectorizer + LogisticRegression，并在划分出的验证集上记录指标。">
+  <meta property="og:url" content="https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/notebooks/train.html">
+  <meta property="og:site_name" content="中文考试题库数据集展示">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="训练试卷分类器 · 静态 notebook">
+  <meta name="twitter:description" content="jieba + CountVectorizer + LogisticRegression，并在划分出的验证集上记录指标。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body class="nb-page">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="../index.html">
+        <span class="brand-seal" aria-hidden="true">题</span>
+        <span class="brand-text">
+          <strong>中文考试题库数据集</strong>
+          <span>静态文档与结果展示</span>
+        </span>
+      </a>
+      <button class="nav-toggle" type="button" data-nav-toggle aria-controls="site-nav" aria-expanded="false">菜单</button>
+      <nav class="site-nav" id="site-nav" data-nav-panel aria-label="站点">
+        <ul>
+          <li><a href="../index.html">首页</a></li>
+<li><a href="../pipeline.html">处理流程</a></li>
+<li><a href="../usage.html">代码使用</a></li>
+<li><a href="../notebooks.html">实验记录</a></li>
+<li><a href="../results.html">记录结果</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <div class="wrap">
+      
+    <section class="page-hero">
+      <p class="kicker">NOTEBOOK</p>
+      <h1>训练试卷分类器</h1>
+      <p class="lead">jieba + CountVectorizer + LogisticRegression，并在划分出的验证集上记录指标。 本页由 <code>notebook/train_examination_paper_classifier.ipynb</code> 的已保存单元格静态渲染，没有重新执行内核。</p>
+      <p class="actions">
+        <a class="button button-primary" href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/train_examination_paper_classifier.ipynb">GitHub 源文件</a>
+        <a class="button button-ghost" href="https://nbviewer.org/github/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/train_examination_paper_classifier.ipynb">nbviewer</a>
+        <a class="button button-ghost" href="../notebooks.html">返回目录</a>
+      </p>
+    </section>
+    <p class="note">过长输出（尤其是文件路径清单和词汇表）已截断，以免 GitHub Pages 产物过大。数字与表格保持原样。</p>
+    
+            <article class="nb-cell">
+              <p class="nb-label">Code · 1 · In[1]</p>
+              <pre><code>from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
+import joblib
+import datasets</code></pre>
+              
+            </article>
+            <article class="nb-cell"><p class="nb-label">Markdown · 2</p><h1>Train</h1></article>
+            <article class="nb-cell">
+              <p class="nb-label">Code · 3 · In[2]</p>
+              <pre><code>import re
+
+def remove_image_string(input_string):
+    pattern = r&quot;!\[(.*?)\]\(.*?\)\{width=\&quot;.*?\&quot; height=\&quot;.*?\&quot;\}|!\[.*?\]\(.*?\)|\[.*?\]\{.*?\}&quot;
+    result = re.sub(pattern, &quot;&quot;, input_string)
+    return result
+
+def is_all_chinese_or_english(text):
+    for char in text:
+        if not is_chinese_or_english(char):
+            return False
+    return True
+
+def is_chinese_or_english(char):
+    # 判断是否为中文
+    if &#x27;\u4e00&#x27; &lt;= char &lt;= &#x27;\u9fff&#x27;:
+        return True
+    # 判断是否为英文
+    elif &#x27;a&#x27; &lt;= char.lower() &lt;= &#x27;z&#x27;:
+        return True
+    else:
+        return False
+
+def remove_noise_character(input_string):
+    pattern = r&quot;[&gt;*|image|data|media|png]&quot;
+    
+    return re.sub(pattern, &quot;&quot;, input_string)
+
+def one_text_pre_process(text):
+    precessed_text_split_lines = []
+    
+    for line in text.splitlines():
+        remove_image_line = remove_image_string(line)
+
+        if remove_image_line.strip() in [&quot;&quot;, &quot;&gt;&quot;]:
+            continue
+
+        remove_image_line = remove_noise_character(remove_image_line)
+        precessed_text_split_lines.append(remove_image_line)
+        
+    return &quot;\n&quot;.join(precessed_text_split_lines)
+
+def pre_process(text_list):
+    precessed_text_list = [one_text_pre_process(text) for text in text_list]
+    return precessed_text_list
+
+def dataset_map_pre_process(row):
+    row[&quot;text&quot;] = one_text_pre_process(row[&quot;text&quot;])
+    return row</code></pre>
+              
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 4 · In[29]</p>
+              <pre><code>import jieba
+
+
+def chinese_tokenizer(text):
+    tokens = jieba.cut(text)
+    return list(filter(lambda x:is_all_chinese_or_english(x), tokens))
+
+
+def train(dataset):
+    vectorizer = CountVectorizer(tokenizer=chinese_tokenizer, ngram_range=(1, 2))
+    classifier = LogisticRegression(max_iter=100, verbose=1)
+    model = make_pipeline(vectorizer, classifier)
+    
+    model.fit(dataset[&quot;text&quot;], dataset[&quot;label&quot;])
+    return model</code></pre>
+              
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 5 · In[113]</p>
+              <pre><code>datadict = datasets.load_dataset(&quot;ranWang/test_paper_textClassifier&quot;)
+# datadict = datasets.load_from_disk(&quot;./classification_datasets&quot;)
+datadict</code></pre>
+              <pre class="nb-output"><code>Found cached dataset parquet (/home/wran/.cache/huggingface/datasets/ranWang___parquet/ranWang--test_paper_textClassifier-ba2ea6a1b61133f3/0.0.0/2a3b91fbd88a2c90d1dbbb32b460cf621d31bd5b05b934492fdef7d8d6f236ec)
+</code></pre>
+<pre class="nb-output"><code>  0%|          | 0/2 [00:00&lt;?, ?it/s]</code></pre>
+<pre class="nb-output"><code>DatasetDict({
+    train: Dataset({
+        features: [&#x27;text&#x27;, &#x27;label&#x27;, &#x27;file_path&#x27;],
+        num_rows: 13621
+    })
+    test: Dataset({
+        features: [&#x27;text&#x27;, &#x27;label&#x27;, &#x27;file_path&#x27;],
+        num_rows: 387
+    })
+})</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 6 · In[114]</p>
+              <pre><code>train_dataset = datadict[&quot;train&quot;]
+train_dataset = train_dataset.map(dataset_map_pre_process)</code></pre>
+              <pre class="nb-output"><code>Map:   0%|          | 0/13621 [00:00&lt;?, ? examples/s]</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 7 · In[115]</p>
+              <pre><code># 随机打乱
+# shuffle(36) Accuracy = 0.9787
+# shuffle(42) Accuracy = 0.9809
+# shuffle(100) Accuracy = 0.9838
+train_dataset = train_dataset.shuffle(7)
+# 验证集大小
+validation_size = int(len(train_dataset)/10)
+validation_dataset = train_dataset.select(range(validation_size))
+train_dataset = train_dataset.select(range(validation_size, len(train_dataset)))</code></pre>
+              
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 8 · In[116]</p>
+              <pre><code>train_dataset</code></pre>
+              <pre class="nb-output"><code>Dataset({
+    features: [&#x27;text&#x27;, &#x27;label&#x27;, &#x27;file_path&#x27;],
+    num_rows: 12259
+})</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 9 · In[117]</p>
+              <pre><code>model = train(train_dataset)</code></pre>
+              <pre class="nb-output"><code>/home/wran/.local/lib/python3.10/site-packages/sklearn/feature_extraction/text.py:528: UserWarning: The parameter &#x27;token_pattern&#x27; will not be used since &#x27;tokenizer&#x27; is not None&#x27;
+  warnings.warn(
+[Parallel(n_jobs=1)]: Using backend SequentialBackend with 1 concurrent workers.
+</code></pre>
+<pre class="nb-output"><code>RUNNING THE L-BFGS-B CODE
+
+           * * *
+
+Machine precision = 2.220D-16
+ N =      8219976     M =           10
+
+At X0         0 variables are exactly at the bounds
+
+At iterate    0    f=  8.49729D+03    |proj g|=  2.31264D+05
+</code></pre>
+<pre class="nb-output"><code> This problem is unconstrained.
+</code></pre>
+<pre class="nb-output"><code>
+At iterate   50    f=  2.23503D+02    |proj g|=  2.86424D+02
+
+At iterate  100    f=  8.34721D+01    |proj g|=  3.21273D+01
+
+           * * *
+
+Tit   = total number of iterations
+Tnf   = total number of function evaluations
+Tnint = total number of segments explored during Cauchy searches
+Skip  = number of BFGS updates skipped
+Nact  = number of active bounds at final generalized Cauchy point
+Projg = norm of the final projected gradient
+F     = final function value
+
+           * * *
+
+   N    Tit     Tnf  Tnint  Skip  Nact     Projg        F
+*****    100    173      1     0     0   3.213D+01   8.347D+01
+  F =   83.472147060306042     
+
+STOP: TOTAL NO. of ITERATIONS REACHED LIMIT                 
+</code></pre>
+<pre class="nb-output"><code>/home/wran/.local/lib/python3.10/site-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):
+STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+Please also refer to the documentation for alternative solver options:
+    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression
+  n_iter_i = _check_optimize_result(
+[Parallel(n_jobs=1)]: Done   1 out of   1 | elapsed:  1.6min finished
+</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 10 · In[75]</p>
+              <pre><code>joblib.dump(model, &#x27;TextClassifie-full-final.pkl&#x27;)</code></pre>
+              <pre class="nb-output"><code>[&#x27;TextClassifie-full-final.pkl&#x27;]</code></pre>
+            </article>
+            <article class="nb-cell"><p class="nb-label">Markdown · 11</p><h1>模型数据</h1></article>
+            <article class="nb-cell">
+              <p class="nb-label">Code · 12 · In[63]</p>
+              <pre><code>print(&quot;模型方程: y = &quot;, model.named_steps[&#x27;logisticregression&#x27;].coef_, &quot; * x + &quot;, model.named_steps[&#x27;logisticregression&#x27;].intercept_)
+
+print(&quot;参数量: &quot;, model.named_steps[&#x27;logisticregression&#x27;].coef_.size + 1)</code></pre>
+              <pre class="nb-output"><code>模型方程: y =  [[-1.73503658e-01  9.94315370e-02 -1.48500171e-03 ... -2.40023309e-05
+  -3.60429591e-05 -1.71445220e-05]]  * x +  [-0.56147596]
+参数量:  8227664
+</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 13 · In[17]</p>
+              <pre><code>count_vectorizer = model.steps[0][1]</code></pre>
+              
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 14 · In[18]</p>
+              <pre><code>count_vectorizer.vocabulary_</code></pre>
+              <pre class="nb-output"><code>{&#x27;活动&#x27;: 5165769,
+ &#x27;目标&#x27;: 5687515,
+ &#x27;欣赏&#x27;: 4926855,
+ &#x27;漫画&#x27;: 5306809,
+ &#x27;观察&#x27;: 6739124,
+ &#x27;画面&#x27;: 5609943,
+ &#x27;基础&#x27;: 2683545,
+ &#x27;讲述&#x27;: 6858713,
+ &#x27;自己&#x27;: 6471944,
+ &#x27;理解&#x27;: 5497717,
+ &#x27;尝试&#x27;: 3210666,
+ &#x27;一些&#x27;: 289165,
+ &#x27;幽默&#x27;: 3441247,
+ &#x27;动作&#x27;: 1886350,
+ &#x27;表情&#x27;: 6674624,
+ &#x27;声音&#x27;: 2727028,
+ &#x27;体验&#x27;: 1197552,
+ &#x27;风趣&#x27;: 7817750,
+ &#x27;准备&#x27;: 1630484,
+ &#x27;多媒体&#x27;: 2773298,
+ &#x27;课件&#x27;: 6962814,
+ &#x27;过程&#x27;: 7203559,
+ &#x27;导入&#x27;: 3154793,
+ &#x27;部分&#x27;: 7437690,
+ &#x27;介绍&#x27;: 1009526,
+ &#x27;父与子&#x27;: 5377990,
+ &#x27;形象&#x27;: 3615228,
+ &#x27;今天&#x27;: 1004609,
+ &#x27;大家&#x27;: 2809165,
+ &#x27;带来&#x27;: 3366398,
+ &#x27;两个&#x27;: 632302,
+ &#x27;朋友&#x27;: 4664559,
+ &#x27;你们&#x27;: 1227601,
+ &#x27;认识&#x27;: 6837298,
+ &#x27;我们&#x27;: 3860195,
+ &#x27;起来&#x27;: 7085406,
+ &#x27;他们&#x27;: 1027164,
+ &#x27;出来&#x27;: 1674170,
+ &#x27;猜猜看&#x27;: 5438051,
+ &#x27;干什么&#x27;: 3383368,
+ &#x27;幼儿&#x27;: 3436113,
+ &#x27;讨论&#x27;: 6840669,
+ &#x27;回答&#x27;: 2525561,
+ &#x27;怎么&#x27;: 3708900,
+ &#x27;跳舞&#x27;: 7123750,
+ &#x27;学学看&#x27;: 2974305,
+ &#x27;其实&#x27;: 1547477,
+ &#x27;一个&#x27;: 273532,
+ &#x27;爸爸&#x27;: 5380308,
+ &#x27;还有&#x27;: 7238415,
+ &#x27;儿子&#x27;: 1378146,
+ &#x27;仔细&#x27;: 1024878,
+ &#x27;看看&#x27;: 5750300,
+ &#x27;什么&#x27;: 994723,
+ &#x27;样子&#x27;: 4842855,
+ &#x27;小结&#x27;: 3195339,
+ &#x27;长得&#x27;: 7571412,
+ &#x27;有趣&#x27;: 4659639,
+ &#x27;长着&#x27;: 7576843,
+ &#x27;密密的&#x27;: 3118733,
+ &#x27;胡子&#x27;: 6423738,
+ &#x27;翘翘&#x27;: 6315338,
+ &#x27;眉毛&#x27;: 5740411,
+ &#x27;头上&#x27;: 2862008,
+ &#x27;没有&#x27;: 5105432,
+ &#x27;一根&#x27;: 349469,
+ &#x27;头发&#x27;: 2862393,
+ &#x27;就是&#x27;: 3215248,
+ &#x27;太乱&#x27;: 2849661,
+ &#x27;一堆&#x27;: 315563,
+ &#x27;草堆&#x27;: 6563617,
+ &#x27;可真有&#x27;: 2264607,
+ &#x27;意思&#x27;: 3803942,
+ &#x27;德国&#x27;: 3663005,
+ &#x27;非常&#x27;: 7730100,
+ &#x27;了不起&#x27;: 835437,
+ &#x27;大师&#x27;: 2814428,
+ &#x27;卜劳恩画&#x27;: 2026826,
+ &#x27;这个&#x27;: 7244631,
+ &#x27;之间&#x27;: 798374,
+ &#x27;发生&#x27;: 2162579,
+ &#x27;很多&#x27;: 3636292,
+ &#x27;好玩&#x27;: 2895142,
+ &#x27;事情&#x27;: 852168,
+ &#x27;卜劳恩&#x27;: 2026823,
+ &#x27;它们&#x27;: 2992393,
+ &#x27;下来&#x27;: 489349,
+ &#x27;记在&#x27;: 6848690,
+ &#x27;一本&#x27;: 343002,
+ &#x27;漫画书&#x27;: 5306989,
+ &#x27;其中&#x27;: 1532587,
+ &#x27;一组&#x27;: 379937,
+ &#x27;最后&#x27;: 4602926,
+ &#x27;苹果&#x27;: 6553332,
+ &#x27;父子俩&#x27;: 5378847,
+ &#x27;完整&#x27;: 3023555,
+ &#x27;第一幅&#x27;: 5974768,
+ &#x27;画后&#x27;: 5608330,
+ &#x27;提问&#x27;: 4209229,
+ &#x27;父子&#x27;: 5378766,
+ &#x27;这棵&#x27;: 7268440,
+ &#x27;苹果树&#x27;: 6553866,
+ &#x27;特别&#x27;: 5403116,
+ &#x27;地方&#x27;: 2622951,
+ &#x27;树上&#x27;: 4836149,
+ &#x27;几只&#x27;: 1653334,
+ &#x27;怎样才能&#x27;: 3713594,
+ &#x27;得到&#x27;: 3650314,
+ &#x27;商量&#x27;: 2482397,
+ &#x27;获得&#x27;: 6577843,
+ &#x27;办法&#x27;: 1855129,
+ &#x27;刚才&#x27;: 1757267,
+ &#x27;小朋友&#x27;: 3187802,
+ &#x27;这么&#x27;: 7249485,
+ &#x27;方法&#x27;: 4430800,
+ &#x27;继续&#x27;: 6244891,
+ &#x27;往下&#x27;: 3628896,
+ &#x27;观看&#x27;: 6745737,
+ &#x27;结束&#x27;: 6210350,
+ &#x27;故事&#x27;: 4299325,
+ &#x27;感觉&#x27;: 3819919,
+ &#x27;觉得&#x27;: 6768560,
+ &#x27;哪个&#x27;: 2452774,
+ &#x27;为什么&#x27;: 729203,
+ &#x27;教师&#x27;: 4320508,
+ &#x27;出示&#x27;: 1686146,
+ &#x27;相应&#x27;: 5723943,
+ &#x27;重点&#x27;: 7491812,
+ &#x27;突出&#x27;: 5933749,
+ &#x27;情节&#x27;: 3784949,
+ &#x27;这幅&#x27;: 7259109,
+ &#x27;手里&#x27;: 3942727,
+ &#x27;老爸&#x27;: 6326124,
+ &#x27;晃树&#x27;: 4559108,
+ &#x27;启发&#x27;: 2397584,
+ &#x27;表演&#x27;: 6677870,
+ &#x27;咱们&#x27;: 2439052,
+ &#x27;学学&#x27;: 2974239,
+ &#x27;屁股&#x27;: 3239021,
+ &#x27;第二幅&#x27;: 5992991,
+ &#x27;想出&#x27;: 3790803,
+ &#x27;手杖&#x27;: 3938157,
+ &#x27;结果&#x27;: 6216202,
+ &#x27;哪里&#x27;: 2456830,
+ &#x27;打中&#x27;: 3947495,
+ &#x27;脑袋&#x27;: 6449101,
+ &#x27;好笑&#x27;: 2895585,
+ &#x27;模仿&#x27;: 4909431,
+ &#x27;学一学&#x27;: 2967083,
+ &#x27;第三幅&#x27;: 5984322,
+ &#x27;哈哈&#x27;: 2449391,
+ &#x27;没拿到&#x27;: 5105206,
+ &#x27;甘心&#x27;: 5508885,
+ &#x27;啊呀&#x27;: 2483010,
+ &#x27;可怜&#x27;: 2258985,
+ &#x27;第四幅&#x27;: 6005441,
+ &#x27;急中生智&#x27;: 3723603,
+ &#x27;原来&#x27;: 2085075,
+ &#x27;有没有&#x27;: 4654110,
+ &#x27;这样&#x27;: 7263823,
+ &#x27;采过&#x27;: 7478884,
+ &#x27;水果&#x27;: 5058031,
+ &#x27;第五幅&#x27;: 5997720,
+ &#x27;哎呀&#x27;: 2451384,
+ &#x27;不好&#x27;: 531431,
+ &#x27;打着&#x27;: 3954280,
+ &#x27;靴子&#x27;: 7749013,
+ &#x27;树枝&#x27;: 4837361,
+ &#x27;前面&#x27;: 1833549,
+ &#x27;第六&#x27;: 5999432,
+ &#x27;好不容易&#x27;: 2889753,
+ &#x27;掉下来&#x27;: 4131692,
+ &#x27;折腾&#x27;: 4029348,
+ &#x27;半天&#x27;: 1984169,
+…</code></pre><p class="meta">输出已截断：此处显示前 2800 个字符，原文约 17678 个字符。完整内容请打开 GitHub 或 nbviewer 上的 notebook。</p>
+            </article>
+            <article class="nb-cell"><p class="nb-label">Markdown · 15</p><h1>Test</h1></article>
+            <article class="nb-cell">
+              <p class="nb-label">Code · 16 · In[22]</p>
+              <pre><code>from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
+from tabulate import tabulate</code></pre>
+              <pre class="nb-output"><code>---------------------------------------------------------------------------
+ModuleNotFoundError                       Traceback (most recent call last)
+Cell In[22], line 2
+      1 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
+----&gt; 2 from tabulate import tabulate
+
+ModuleNotFoundError: No module named &#x27;tabulate&#x27;</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 17 · In[118]</p>
+              <pre><code>def predict_with_threshold(model, X, threshold=0.5):
+    probabilities = model.predict_proba(X)
+    
+    positive_probabilities = probabilities[:, 1]
+
+    predictions = (positive_probabilities &gt; threshold).astype(int)
+    
+    return predictions, positive_probabilities</code></pre>
+              
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 18 · In[119]</p>
+              <pre><code># test_dataset = datadict[&quot;test&quot;]
+test_dataset = validation_dataset</code></pre>
+              
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 19 · In[120]</p>
+              <pre><code>test_dataset = test_dataset.map(dataset_map_pre_process)</code></pre>
+              <pre class="nb-output"><code>Map:   0%|          | 0/1362 [00:00&lt;?, ? examples/s]</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 20 · In[121]</p>
+              <pre><code>import time
+
+start_time = time.time()
+
+predictions, positive_probabilities = predict_with_threshold(model, test_dataset[&quot;text&quot;])
+
+print(f&quot;time { time.time() - start_time}&quot;)</code></pre>
+              <pre class="nb-output"><code>time 18.944443702697754
+</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 21 · In[122]</p>
+              <pre><code>accuracy = accuracy_score(test_dataset[&quot;label&quot;], predictions)
+recall = recall_score(test_dataset[&quot;label&quot;], predictions)
+precision = precision_score(test_dataset[&quot;label&quot;], predictions)
+f1 = f1_score(test_dataset[&quot;label&quot;], predictions)</code></pre>
+              
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 22 · In[123]</p>
+              <pre><code>accuracy</code></pre>
+              <pre class="nb-output"><code>0.9794419970631424</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 23 · In[300]</p>
+              <pre><code>data = [[&quot;Accuracy&quot;, accuracy], [&quot;Recall&quot;, recall], [&quot;Precision&quot;, precision], [&quot;F1 Score&quot;, f1]]
+
+print(tabulate(data, headers=[&quot;Metric&quot;, &quot;Score&quot;]))</code></pre>
+              <pre class="nb-output"><code>Metric        Score
+---------  --------
+Accuracy   0.98403
+Recall     0.971564
+Precision  0.97852
+F1 Score   0.97503
+</code></pre>
+            </article>
+            <article class="nb-cell"><p class="nb-label">Markdown · 24</p><h1>Check</h1></article>
+            <article class="nb-cell">
+              <p class="nb-label">Code · 25 · In[213]</p>
+              <pre><code># 按照0.5threshold判断是否为试卷
+# 文件路径为空则是当初数据集版本没有添加这个字段
+for index, prediction in enumerate(predictions):
+    if test_dataset[&#x27;label&#x27;][index] != prediction:
+        scope = &#x27;{:.2f}&#x27;.format(positive_probabilities[index])
+        print(f&quot;{index} -- {scope} -- {test_dataset[&#x27;file_path&#x27;][index]}&quot;)</code></pre>
+              <pre class="nb-output"><code>150 -- 0.63 -- negative_file/人民时评常用词汇【官方抖音号：材料大师姐】.docx
+195 -- 0.00 -- positive_file/销售在线测试题.doc
+320 -- 0.97 -- negative_file/双体系现场问卷知识汇总.doc
+355 -- 0.00 -- positive_file/2016年湖南湘江新区遴选公务员考试真题及答案-纪检监察岗【官方抖音号：资深秘书】.docx
+437 -- 1.00 -- negative_file/浙江大学2023年硕士研究生招生考试复试分数线的基本要求.docx
+468 -- 1.00 -- negative_file/党建理论知识应知应会【唯一微信 aoling18031988287】.doc
+489 -- 0.00 -- 
+496 -- 0.44 -- 
+517 -- 0.01 -- positive_file/公考遴选每日考题10道（2022年12月24日）【关注抖音号：资深秘书】.docx
+529 -- 0.60 -- 
+553 -- 0.00 -- positive_file/2016年湖北省直机关遴选公务员考试真题及答案-综合执法类【官方抖音号：资深秘书】.docx
+560 -- 1.00 -- negative_file/大作文分论点“思维工具”--观点倍增术（上篇）.docx
+606 -- 0.00 -- 
+659 -- 0.63 -- negative_file/亚商-东阿阿胶集团—2000年广告.doc
+693 -- 1.00 -- negative_file/ch12;.doc
+725 -- 1.00 -- negative_file/ch12a.doc
+767 -- 0.00 -- positive_file/2011年7月13日河南郑州市遴选公务员考试真题及答案【官方抖音号：资深秘书】.docx
+817 -- 0.01 -- positive_file/公考遴选每日考题10道（2022年11月17日）【官方抖音号：资深秘书】.docx
+821 -- 0.99 -- negative_file/20201111-职场礼仪问答（88题）【唯一微信 aoling18031988287】.doc
+874 -- 0.22 -- 
+919 -- 0.99 -- negative_file/会计必会的19个Excel公式.docx
+965 -- 1.00 -- negative_file/技术培训--螺丝的国际标准.doc
+987 -- 0.16 -- 
+1031 -- 0.38 -- 
+1047 -- 0.00 -- positive_file/2004年下半年全国计算机软件专业资格和水平考试系统分析师级试题及答案.doc
+1055 -- 0.94 -- negative_file/笔误更正公告.docx
+1120 -- 0.54 -- negative_file/北京综合工时不定时工作时的规定.doc
+</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 26 · In[221]</p>
+              <pre><code>for line in test_dataset[&quot;text&quot;][195].splitlines():
+    print(line)</code></pre>
+              <pre class="nb-output"><code>                               销售在线测试题
+姓名：                     部门：                    分数：
+                                 （笔试题）
+1. 组织型客户与个人型客户有什么区别？（5分）
+2. 销售在线需要收集记录哪些与客户有关的关键信息？（8分）
+3. 客户的360度全面查看可以查看哪些主要信息？（5分）
+4. 任务的责任人和受分配人有什么区别？（7分）
+5. 任务有哪些要素？（7分）
+6. 销售在线中业务机会有哪三个要素？（5分）
+7. 市场百科全书的目录层次结构是怎样的？（5分）
+8. 市场百科全书能够发布的内容有哪三种？（5分）
+                                 （上机题）
+用户用自己的帐号登录销售在线系统 （5分）
+（用户名＝电子邮件用户名，密码＝888888）
+将下面的销售活动记录到销售在线系统中：（48分）
+1月5日上午9点，销售人员电话预约一家新客户，客户名称为上海××空调公司，地址在上
+海市虹口区××路××号，准备中午与客户代表人王×吃饭。中午12点，与王×交谈当中，了
+解到该客户将在二月底购买一批CG系列的压缩机，估计金额在500000元左右，销售人员
+了解到该客户与竞争对手——另一商家美芝空调压缩机股份有限公司也在商讨购买事宜，
+经过商谈后，销售人员觉得这张单子从客户意向收集开始，成功拿下的可能性有20%，同
+时自己一个人不够，需要加入一名销售人员，并将该消息通过MES发送给营业所总代表。
+下午3点，老客户青岛海尔公司打来电话需要紧急购进一批SH系列的变频压缩机，该销售
+人员由于忙于新客户的单子，就用任务指派的形式，将青岛海尔的单子转交给另一销售
+人员。
+</code></pre>
+            </article>
+            
+    
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p><strong>本站是静态文档 / 结果展示</strong>，不是可交互运行时，也不会重新训练或分类文件。</p>
+      <p>说明只依据仓库内 README、脚本、Markdown 与 5 份已保存输出的 notebook；未写入仓库的数据集规模、用户数或未保存成绩均不在此编造。</p>
+      <nav class="footer-nav" aria-label="页脚">
+        <a href="../index.html">首页</a>
+        <a href="../pipeline.html">处理流程</a>
+        <a href="../usage.html">代码使用</a>
+        <a href="../notebooks.html">实验记录</a>
+        <a href="../results.html">记录结果</a>
+        <a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc">GitHub 仓库</a>
+        <a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/LICENSE">MIT License</a>
+      </nav>
+      <p class="meta">Copyright (c) 2023 UnstoppableCurry · 预定发布地址 https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/</p>
+    </div>
+  </footer>
+  <script src="../assets/site.js" defer></script>
+</body>
+</html>

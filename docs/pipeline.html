@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>处理流程 · 中文考试题库数据集</title>
+  <meta name="description" content="从 zip 解压、doc/docx 转 Markdown、试卷分类到答案检测与切分-对齐的仓库流程说明。">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/pipeline.html">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:title" content="处理流程 · 中文考试题库数据集">
+  <meta property="og:description" content="从 zip 解压、doc/docx 转 Markdown、试卷分类到答案检测与切分-对齐的仓库流程说明。">
+  <meta property="og:url" content="https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/pipeline.html">
+  <meta property="og:site_name" content="中文考试题库数据集展示">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="处理流程 · 中文考试题库数据集">
+  <meta name="twitter:description" content="从 zip 解压、doc/docx 转 Markdown、试卷分类到答案检测与切分-对齐的仓库流程说明。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body class="">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-seal" aria-hidden="true">题</span>
+        <span class="brand-text">
+          <strong>中文考试题库数据集</strong>
+          <span>静态文档与结果展示</span>
+        </span>
+      </a>
+      <button class="nav-toggle" type="button" data-nav-toggle aria-controls="site-nav" aria-expanded="false">菜单</button>
+      <nav class="site-nav" id="site-nav" data-nav-panel aria-label="站点">
+        <ul>
+          <li><a href="index.html">首页</a></li>
+<li><a href="pipeline.html" aria-current="page">处理流程</a></li>
+<li><a href="usage.html">代码使用</a></li>
+<li><a href="notebooks.html">实验记录</a></li>
+<li><a href="results.html">记录结果</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <div class="wrap">
+      
+    <section class="page-hero">
+      <p class="kicker">PIPELINE</p>
+      <h1>处理流程</h1>
+      <p class="lead">以下步骤直接对应 README「处理流程」与「代码使用」。脚本路径、关键字和列名均来自仓库源码，不补充未记录的吞吐或准确率。</p>
+    </section>
+    <section class="section" aria-labelledby="s1">
+      <h2 id="s1">1. 压缩包解压与中文文件名</h2>
+      <p>README 写明：在 CentOS 上解压含中文字符的 zip 可能乱码，应使用 <code>zip2.py</code>。<code>zip2.py</code> 以 <code>cp437</code> 读取 zip 内文件名，再按传入编码（入口示例为 <code>gbk</code>）解码，并把文件写成递增的 <code>{index}.docx</code>，同时写入 <code>original_filename / new_filename</code> 对照表。</p>
+      <pre><code>python zip2.py
+zip_file_path = '../docx_math.zip'
+dest_path = '../docx_math'
+index_csv_path = 'index_to_filename.csv'</code></pre>
+    </section>
+    <section class="section" aria-labelledby="s2">
+      <h2 id="s2">2. 文档转 Markdown</h2>
+      <p>README 主路径使用 <code>docx2markdown2.py</code>：<code>pypandoc</code> 把目录内 <code>.docx</code> 转为 Markdown，并用 <code>--extract-media</code> 把图片抽到指定目录。脚本中的示例目录是 <code>/www/dataset/MNBVC/docx_math</code>、<code>clear_data</code> 与 <code>image_folder</code>。</p>
+      <p>同仓库还有 <code>process_doc_files.py</code>（调用系统 <code>pandoc</code>）和 <code>docx2markdown.py</code>。环境说明要求先安装 pandoc；<code>pypandoc</code> 只是封装。</p>
+    </section>
+    <section class="section" aria-labelledby="s3">
+      <h2 id="s3">3. 统计文件是否为试卷</h2>
+      <p>README 给出的命令是：</p>
+      <pre><code>python examination_paper_classifier.py --input_dir="./docx" --csv_path="classifier.csv"</code></pre>
+      <p>该脚本只处理 <code>doc / docx / md</code>。文本过短或 <code>--just_by_file_name=1</code> 时，改用文件名是否包含「考试 / 试卷 / 卷 / 试题」。<code>detect_language</code> 只继续处理判定为中文的文本。</p>
+      <p>CSV 列名为 <code>file_path</code>、<code>target_path</code>、<code>probability</code>、<code>type</code>。README 记载的 <code>type</code> 取值是：公务员、化学、医学、历史、地理、政治、数学、物理、生物、语文、理综、文综、other、None。源码里的关键词表另外包含「心理」；类型函数在分差过小或计数过低时返回 <code>indefinable</code>。</p>
+      <p>CLI 默认 <code>--model_url</code> 为 Hugging Face 上的 <code>ranWang/test_paper_textClassifier</code> 模型文件；当前 <code>__main__</code> 里下载逻辑被注释，实际加载 <code>./notebook/TextClassifie-full-final.pkl</code>。该 pkl 被 <code>.gitignore</code> 忽略，不在 Git 跟踪范围内。</p>
+    </section>
+    <section class="section" aria-labelledby="s4">
+      <h2 id="s4">4. 文件名粗筛与是否含答案</h2>
+      <p><code>过滤试卷.py</code> 读取 <code>index_to_filename.csv</code>，按文件名是否包含「考试 / 试卷 / 卷 / 试题 / 试」拆成 <code>rows_with_keywords.csv</code> 与 <code>rows_without_keywords.csv</code>。</p>
+      <p><code>判断是否有答案.py</code> 再检查「答 / 解 / 解析 / 答案」：先看路径，再尝试读取 <code>../clear_data/</code> 下对应文本，输出 <code>rows_with_answers.csv</code> 与 <code>rows_without_answers.csv</code>。</p>
+    </section>
+    <section class="section" aria-labelledby="s5">
+      <h2 id="s5">5. 有答案试卷的切分-对齐</h2>
+      <p><code>有答案试卷切分-对齐.py</code> 读取 <code>rows_with_keywords.csv</code>，把路径改写成 <code>../clear_data/*.md</code>，再用正则</p>
+      <pre><code>r'\d+\.|一|二|三|四|五|六|七|八|九|十|百|千|万|亿|\.'</code></pre>
+      <p>切分正文，并以 JSON Lines 追加到 <code>结果.json</code>。这是仓库里的尝试脚本，README 未给出切分质量数字。</p>
+    </section>
+    <section class="section" aria-labelledby="repo-csv">
+      <h2 id="repo-csv">仓库内现存过程 CSV</h2>
+      <p>下列行数由当前仓库文件直接统计，只说明「这个 Git 副本里有什么」，不是完整原始语料规模。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>文件</th><th>行数</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td><code>classifier.csv</code></td><td>59580</td><td>含 1 列表头；数据行 59579，与 <code>type_classifier_determine_keywords.ipynb</code> 中 DataFrame 行数一致。</td></tr>
+            <tr><td><code>data/index_to_filename.csv</code></td><td>2252</td><td>含表头 <code>original_filename,new_filename</code>。</td></tr>
+            <tr><td><code>data/rows_with_keywords.csv</code></td><td>1535</td><td><code>过滤试卷.py</code> 直接 <code>writerows</code>，无单独表头。</td></tr>
+            <tr><td><code>data/rows_without_keywords.csv</code></td><td>717</td><td>同上。</td></tr>
+            <tr><td><code>data/rows_with_answers.csv</code></td><td>857</td><td><code>判断是否有答案.py</code> 输出。</td></tr>
+            <tr><td><code>data/rows_without_answers.csv</code></td><td>678</td><td>同上。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="meta">1535 + 717 = 2252，对应 <code>index_to_filename.csv</code> 的全部行（含可能被当成数据写下的表头）。857 + 678 = 1535，对应 <code>rows_with_keywords.csv</code> 的全部行。</p>
+    </section>
+    
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p><strong>本站是静态文档 / 结果展示</strong>，不是可交互运行时，也不会重新训练或分类文件。</p>
+      <p>说明只依据仓库内 README、脚本、Markdown 与 5 份已保存输出的 notebook；未写入仓库的数据集规模、用户数或未保存成绩均不在此编造。</p>
+      <nav class="footer-nav" aria-label="页脚">
+        <a href="index.html">首页</a>
+        <a href="pipeline.html">处理流程</a>
+        <a href="usage.html">代码使用</a>
+        <a href="notebooks.html">实验记录</a>
+        <a href="results.html">记录结果</a>
+        <a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc">GitHub 仓库</a>
+        <a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/LICENSE">MIT License</a>
+      </nav>
+      <p class="meta">Copyright (c) 2023 UnstoppableCurry · 预定发布地址 https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/</p>
+    </div>
+  </footer>
+  <script src="assets/site.js" defer></script>
+</body>
+</html>
