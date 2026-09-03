@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>实验记录 · 中文考试题库数据集</title>
+  <meta name="description" content="五份已核验 Jupyter notebook 的静态渲染索引，并链接到 GitHub 与 nbviewer。">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/notebooks.html">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:title" content="实验记录 · 中文考试题库数据集">
+  <meta property="og:description" content="五份已核验 Jupyter notebook 的静态渲染索引，并链接到 GitHub 与 nbviewer。">
+  <meta property="og:url" content="https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/notebooks.html">
+  <meta property="og:site_name" content="中文考试题库数据集展示">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="实验记录 · 中文考试题库数据集">
+  <meta name="twitter:description" content="五份已核验 Jupyter notebook 的静态渲染索引，并链接到 GitHub 与 nbviewer。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body class="">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-seal" aria-hidden="true">题</span>
+        <span class="brand-text">
+          <strong>中文考试题库数据集</strong>
+          <span>静态文档与结果展示</span>
+        </span>
+      </a>
+      <button class="nav-toggle" type="button" data-nav-toggle aria-controls="site-nav" aria-expanded="false">菜单</button>
+      <nav class="site-nav" id="site-nav" data-nav-panel aria-label="站点">
+        <ul>
+          <li><a href="index.html">首页</a></li>
+<li><a href="pipeline.html">处理流程</a></li>
+<li><a href="usage.html">代码使用</a></li>
+<li><a href="notebooks.html" aria-current="page">实验记录</a></li>
+<li><a href="results.html">记录结果</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <div class="wrap">
+      
+    <section class="page-hero">
+      <p class="kicker">NOTEBOOKS</p>
+      <h1>实验记录</h1>
+      <p class="lead">五份 notebook 均位于 <code>notebook/</code>。本站把已保存输出渲染成静态 HTML，便于阅读表格与指标；过长的文件路径列表会被截断。若要看到未截断输出，请打开 GitHub 源文件或 nbviewer。</p>
+    </section>
+    <section class="section">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>静态页</th><th>仓库路径</th><th>内容</th><th>完整源</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><a href="notebooks/create-datasets.html">构建分类数据集</a></td>
+              <td><code>notebook/create_datasets.ipynb</code></td>
+              <td>从试卷 / 非试卷 Markdown 目录组装 Hugging Face Dataset，并追加正负例。</td>
+              <td><a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/create_datasets.ipynb">GitHub</a> · <a href="https://nbviewer.org/github/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/create_datasets.ipynb">nbviewer</a></td>
+            </tr>
+            
+            <tr>
+              <td><a href="notebooks/train.html">训练试卷分类器</a></td>
+              <td><code>notebook/train_examination_paper_classifier.ipynb</code></td>
+              <td>jieba + CountVectorizer + LogisticRegression，并在划分出的验证集上记录指标。</td>
+              <td><a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/train_examination_paper_classifier.ipynb">GitHub</a> · <a href="https://nbviewer.org/github/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/train_examination_paper_classifier.ipynb">nbviewer</a></td>
+            </tr>
+            
+            <tr>
+              <td><a href="notebooks/type-classifier.html">学科关键词与类型检查</a></td>
+              <td><code>notebook/type_classifier_determine_keywords.ipynb</code></td>
+              <td>统计各学科高频词，并读取 classifier.csv 做类型分布与路径抽查。</td>
+              <td><a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/type_classifier_determine_keywords.ipynb">GitHub</a> · <a href="https://nbviewer.org/github/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/type_classifier_determine_keywords.ipynb">nbviewer</a></td>
+            </tr>
+            
+            <tr>
+              <td><a href="notebooks/validation.html">分类结果核验</a></td>
+              <td><code>notebook/validation_results.ipynb</code></td>
+              <td>按路径关键词核对题库子集，并查找可能的假阴性 / 假阳性。</td>
+              <td><a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/validation_results.ipynb">GitHub</a> · <a href="https://nbviewer.org/github/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/validation_results.ipynb">nbviewer</a></td>
+            </tr>
+            
+            <tr>
+              <td><a href="notebooks/random-test.html">随机抽检模型</a></td>
+              <td><code>notebook/random_test_model.ipynb</code></td>
+              <td>从本地 docx 目录随机抽样，打印中间置信度样本并人工查看正文。</td>
+              <td><a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/random_test_model.ipynb">GitHub</a> · <a href="https://nbviewer.org/github/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/random_test_model.ipynb">nbviewer</a></td>
+            </tr>
+            </tbody>
+        </table>
+      </div>
+    </section>
+    <section class="note">
+      <p>这些页面不会执行 Python，也不会加载 <code>.pkl</code>。训练与随机抽检 notebook 依赖的本地 <code>data/docx</code>、<code>positive_file</code>、<code>negative_file</code> 等目录已被 <code>.gitignore</code> 排除，不在本展示中。</p>
+    </section>
+    
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p><strong>本站是静态文档 / 结果展示</strong>，不是可交互运行时，也不会重新训练或分类文件。</p>
+      <p>说明只依据仓库内 README、脚本、Markdown 与 5 份已保存输出的 notebook；未写入仓库的数据集规模、用户数或未保存成绩均不在此编造。</p>
+      <nav class="footer-nav" aria-label="页脚">
+        <a href="index.html">首页</a>
+        <a href="pipeline.html">处理流程</a>
+        <a href="usage.html">代码使用</a>
+        <a href="notebooks.html">实验记录</a>
+        <a href="results.html">记录结果</a>
+        <a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc">GitHub 仓库</a>
+        <a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/LICENSE">MIT License</a>
+      </nav>
+      <p class="meta">Copyright (c) 2023 UnstoppableCurry · 预定发布地址 https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/</p>
+    </div>
+  </footer>
+  <script src="assets/site.js" defer></script>
+</body>
+</html>

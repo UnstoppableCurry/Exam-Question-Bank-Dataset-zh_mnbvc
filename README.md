@@ -1,5 +1,10 @@
 # Exam-Question-Bank-Dataset-zh
 通用考试题库数据集  选择 填空 简答
+
+**静态文档与结果展示（GitHub Pages）**：[https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/](https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/)
+
+该站点由 `site/build.py` 根据本 README 与 `notebook/` 下 5 份已核验 notebook 生成静态 HTML，只展示仓库内已写明的流程和已保存的执行输出，不是在线运行环境。
+
 # 处理流程
 1.格式转换 所有.doc 转为.docx 格式
 

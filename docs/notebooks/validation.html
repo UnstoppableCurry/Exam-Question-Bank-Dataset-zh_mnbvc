@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>分类结果核验 · 静态 notebook</title>
+  <meta name="description" content="按路径关键词核对题库子集，并查找可能的假阴性 / 假阳性。">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/notebooks/validation.html">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:title" content="分类结果核验 · 静态 notebook">
+  <meta property="og:description" content="按路径关键词核对题库子集，并查找可能的假阴性 / 假阳性。">
+  <meta property="og:url" content="https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/notebooks/validation.html">
+  <meta property="og:site_name" content="中文考试题库数据集展示">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="分类结果核验 · 静态 notebook">
+  <meta name="twitter:description" content="按路径关键词核对题库子集，并查找可能的假阴性 / 假阳性。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body class="nb-page">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="../index.html">
+        <span class="brand-seal" aria-hidden="true">题</span>
+        <span class="brand-text">
+          <strong>中文考试题库数据集</strong>
+          <span>静态文档与结果展示</span>
+        </span>
+      </a>
+      <button class="nav-toggle" type="button" data-nav-toggle aria-controls="site-nav" aria-expanded="false">菜单</button>
+      <nav class="site-nav" id="site-nav" data-nav-panel aria-label="站点">
+        <ul>
+          <li><a href="../index.html">首页</a></li>
+<li><a href="../pipeline.html">处理流程</a></li>
+<li><a href="../usage.html">代码使用</a></li>
+<li><a href="../notebooks.html">实验记录</a></li>
+<li><a href="../results.html">记录结果</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <div class="wrap">
+      
+    <section class="page-hero">
+      <p class="kicker">NOTEBOOK</p>
+      <h1>分类结果核验</h1>
+      <p class="lead">按路径关键词核对题库子集，并查找可能的假阴性 / 假阳性。 本页由 <code>notebook/validation_results.ipynb</code> 的已保存单元格静态渲染，没有重新执行内核。</p>
+      <p class="actions">
+        <a class="button button-primary" href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/validation_results.ipynb">GitHub 源文件</a>
+        <a class="button button-ghost" href="https://nbviewer.org/github/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/notebook/validation_results.ipynb">nbviewer</a>
+        <a class="button button-ghost" href="../notebooks.html">返回目录</a>
+      </p>
+    </section>
+    <p class="note">过长输出（尤其是文件路径清单和词汇表）已截断，以免 GitHub Pages 产物过大。数字与表格保持原样。</p>
+    
+            <article class="nb-cell">
+              <p class="nb-label">Code · 1 · In[133]</p>
+              <pre><code>import pandas as pd
+
+all_file_df = pd.read_csv(&quot;../classifier.csv&quot;)
+
+all_file_df[&#x27;probability&#x27;] = pd.to_numeric(all_file_df[&#x27;probability&#x27;])
+
+threshold = 0.5
+
+positive_df = all_file_df[all_file_df[&#x27;probability&#x27;] &gt; threshold]
+negative_df = all_file_df[all_file_df[&#x27;probability&#x27;] &lt;= threshold]
+
+all_file_df</code></pre>
+              <div class="nb-html-output"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>file_path</th>
+      <th>target_path</th>
+      <th>probability</th>
+      <th>type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>1.211337e-24</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>6.115465e-26</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>1.424632e-14</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>6.168316e-12</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>./data/docx/18 A股脱水研报/A股脱水研报（2018年10月）/【公益知识库z...</td>
+      <td>3.395665e-19</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>59574</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>9.999979e-01</td>
+      <td>other</td>
+    </tr>
+    <tr>
+      <th>59575</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>9.993577e-01</td>
+      <td>数学</td>
+    </tr>
+    <tr>
+      <th>59576</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>9.973776e-01</td>
+      <td>数学</td>
+    </tr>
+    <tr>
+      <th>59577</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>9.999971e-01</td>
+      <td>other</td>
+    </tr>
+    <tr>
+      <th>59578</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>7.716563e-06</td>
+      <td>NaN</td>
+    </tr>
+  </tbody>
+</table>
+<p>59579 rows × 4 columns</p>
+</div></div>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 2 · In[134]</p>
+              <pre><code>positive_df</code></pre>
+              <div class="nb-html-output"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>file_path</th>
+      <th>target_path</th>
+      <th>probability</th>
+      <th>type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>139</th>
+      <td>./data/docx/docx/20230408024726_VwDufURUX0cFYK...</td>
+      <td>./data/docx/docx/20230408024726_VwDufURUX0cFYK...</td>
+      <td>0.944269</td>
+      <td>政治</td>
+    </tr>
+    <tr>
+      <th>147</th>
+      <td>./data/docx/docx/20230408024726_VwDufURUX0cFYK...</td>
+      <td>./data/docx/docx/20230408024726_VwDufURUX0cFYK...</td>
+      <td>0.956355</td>
+      <td>政治</td>
+    </tr>
+    <tr>
+      <th>175</th>
+      <td>./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz...</td>
+      <td>./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz...</td>
+      <td>1.000000</td>
+      <td>公务员</td>
+    </tr>
+    <tr>
+      <th>183</th>
+      <td>./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz...</td>
+      <td>./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz...</td>
+      <td>1.000000</td>
+      <td>公务员</td>
+    </tr>
+    <tr>
+      <th>186</th>
+      <td>./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz...</td>
+      <td>./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz...</td>
+      <td>1.000000</td>
+      <td>公务员</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>59573</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>0.996476</td>
+      <td>数学</td>
+    </tr>
+    <tr>
+      <th>59574</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>0.999998</td>
+      <td>other</td>
+    </tr>
+    <tr>
+      <th>59575</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>0.999358</td>
+      <td>数学</td>
+    </tr>
+    <tr>
+      <th>59576</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>0.997378</td>
+      <td>数学</td>
+    </tr>
+    <tr>
+      <th>59577</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>0.999997</td>
+      <td>other</td>
+    </tr>
+  </tbody>
+</table>
+<p>10297 rows × 4 columns</p>
+</div></div>
+            </article>
+            <article class="nb-cell"><p class="nb-label">Markdown · 3</p><h1>类型统计</h1></article>
+            <article class="nb-cell">
+              <p class="nb-label">Code · 4 · In[101]</p>
+              <pre><code>positive_df[&#x27;type&#x27;].value_counts()</code></pre>
+              <pre class="nb-output"><code>type
+数学       3275
+公务员      1144
+医学        842
+政治        795
+地理        613
+化学        597
+生物        539
+other     495
+物理        459
+语文        439
+历史        420
+理综         64
+文综         63
+Name: count, dtype: int64</code></pre>
+            </article>
+            <article class="nb-cell"><p class="nb-label">Markdown · 5</p><h1>检查分类成试卷是否正确</h1></article>
+            <article class="nb-cell">
+              <p class="nb-label">Code · 6 · In[135]</p>
+              <pre><code>def query_file_total_by_keywords(df, keywords: list|set, uninclude_keywords: list|set = []):
+    # keywords和uninclude_keywords可以被抽象理解成路径，如 &quot;/题库&quot;
+    # keywords: 必须全部出现在&quot;file_path&quot;中，才会被统计
+    # uninclude_keywords: 只要出现一个，就不会被统计
+
+    # 创建一个全为 True 的布尔系列，它将用于存储是否每个文件路径包含所有关键字
+    contains_all_keywords = pd.Series([True]*len(df))
+
+    # 检查文件路径是否包含所有关键字
+    for keyword in keywords:
+        contains_all_keywords = contains_all_keywords &amp; df[&#x27;file_path&#x27;].fillna(&#x27;&#x27;).str.contains(keyword)
+
+    if uninclude_keywords:
+        # 检查文件路径是否包含 uninclude_keywords 中的任何一个
+        for keyword in uninclude_keywords:
+            contains_all_keywords = contains_all_keywords &amp; ~df[&#x27;file_path&#x27;].fillna(&#x27;&#x27;).str.contains(keyword)
+
+    filtered_df = df.loc[contains_all_keywords]
+
+    return filtered_df</code></pre>
+              
+            </article>
+            <article class="nb-cell"><p class="nb-label">Markdown · 7</p><h1>检查&quot;题库&quot;文件夹</h1></article><article class="nb-cell"><p class="nb-label">Markdown · 8</p><h1>由于&quot;学前教辅资料&quot;占比比较多，所以优先查看</h1></article>
+            <article class="nb-cell">
+              <p class="nb-label">Code · 9 · In[136]</p>
+              <pre><code># 题库中所有文件数量
+filtered_all_file_df  = query_file_total_by_keywords(all_file_df, {&quot;/题库&quot;})
+len(filtered_all_file_df)</code></pre>
+              <pre class="nb-output"><code>8275</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 10 · In[137]</p>
+              <pre><code># 题库中所有&quot;学前教辅资料&quot;文件数量
+specified_keywords_filtered_all_file_df = query_file_total_by_keywords(all_file_df, {&quot;/题库&quot;, &quot;/学前教辅资料&quot;})
+len(specified_keywords_filtered_all_file_df)</code></pre>
+              <pre class="nb-output"><code>3840</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 11 · In[138]</p>
+              <pre><code>len(specified_keywords_filtered_all_file_df) / len(filtered_all_file_df)</code></pre>
+              <pre class="nb-output"><code>0.46404833836858006</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 12 · In[139]</p>
+              <pre><code># 从题库中筛选出来的所有文件数量
+len(query_file_total_by_keywords(positive_df, {&quot;/题库&quot;}))</code></pre>
+              <pre class="nb-output"><code>4077</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 13 · In[140]</p>
+              <pre><code># 从题库中筛选出来的&quot;学前教辅资料&quot;所有文件(全都是错误的归类)
+query_file_total_by_keywords(positive_df, {&quot;/题库&quot;, &quot;/学前教辅资料&quot;})</code></pre>
+              <div class="nb-html-output"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>file_path</th>
+      <th>target_path</th>
+      <th>probability</th>
+      <th>type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>3529</th>
+      <td>./data/docx/题库/数学/小学/其他/教辅资料库 小初高（合集）/学前教辅资料超级...</td>
+      <td>./data/docx/题库/数学/小学/其他/教辅资料库 小初高（合集）/学前教辅资料超级...</td>
+      <td>0.62461</td>
+      <td>other</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+            </article>
+            <article class="nb-cell"><p class="nb-label">Markdown · 14</p><h1>从文件名(文件路径)推测</h1></article>
+            <article class="nb-cell">
+              <p class="nb-label">Code · 15 · In[141]</p>
+              <pre><code># 从文件路径推测题库文件夹中试卷
+filtered_all_file_df = query_file_total_by_keywords(all_file_df, {&quot;/题库&quot;}, {&quot;小品&quot;, &quot;/学前教辅资料&quot;})
+len(filtered_all_file_df)</code></pre>
+              <pre class="nb-output"><code>4409</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 16 · In[142]</p>
+              <pre><code># 从文件路径推测题库中筛选出来的文件夹中试卷
+specified_keywords_filtered_positive_file_df = query_file_total_by_keywords(positive_df, {&quot;/题库&quot;}, {&quot;小品&quot;, &quot;/学前教辅资料&quot;})
+len(specified_keywords_filtered_positive_file_df)</code></pre>
+              <pre class="nb-output"><code>4074</code></pre>
+            </article>
+            
+            <article class="nb-cell">
+              <p class="nb-label">Code · 17 · In[143]</p>
+              <pre><code># 是&quot;题库&quot;文件夹中的文件，但是预测结果为False
+diff = pd.concat([filtered_all_file_df, specified_keywords_filtered_positive_file_df]).drop_duplicates(subset=[&#x27;file_path&#x27;], keep=False)
+
+for _, row in diff.iterrows():
+    print(row[&quot;file_path&quot;])</code></pre>
+              <pre class="nb-output"><code>./data/docx/题库/医学/✒️大学专区✒️【440GB】/【医学】/口腔医学 389册/（113本）修复书/周升才讲座答疑整理.docx
+./data/docx/题库/医学/全网首发！2022最新考研资料合集！【1.8TB】/2022复试/01.【复试联系导师及简历模板】】（往期版）/02.简历模板集，200个以上（有索引图）/简历模板大全/158.红白表格_表格式_适用于医学专业_1页式_无内容_无封面.doc
+./data/docx/题库/医学/10T电子书 超全/👑👑各类分类/书藉大合集/中医资料（1.94T）_分享/经方系列/傷寒論全部藥方分類錄.doc
+./data/docx/题库/医学/10T电子书 超全/👑👑各类分类/书藉大合集/中医资料（1.94T）_分享/食疗/生活百科：盘点冬季萝卜食疗效果最好的八种吃法 .doc
+./data/docx/题库/医学/10T电子书 超全/👑👑各类分类/书藉大合集/中医资料（1.94T）_分享/食疗/茶/冬季养生：吃羊肉五大禁忌 忌与茶同食.doc
+./data/docx/题库/医学/10T电子书 超全/👑👑各类分类/书藉大合集/中医资料（1.94T）_分享/食疗/茶/生姜红茶 为冬季减肥做准备 .doc
+./data/docx/题库/医学/10T电子书 超全/👑👑各类分类/书藉大合集/中医资料（1.94T）_分享/食疗/酒/冬季吃火锅喝烈酒悠着点 葡萄酒养生避四大雷区.doc
+./data/docx/题库/医学/10T电子书 超全/👑👑各类分类/书藉大合集/中医资料（1.94T）_分享/食疗/酒/年底聚会多 男人如何健康饮酒 .doc
+./data/docx/题库/医学/10T电子书 超全/👑👑各类分类/书藉大合集/中医资料（1.94T）_分享/南京中医药大学学习课件/按摩手法.doc
+./data/docx/题库/医学/10T电子书 超全/👑👑各类分类/书藉大合集/中医资料（1.94T）_分享/南京中医药大学学习课件/推拿学基础/9辅助方法.doc
+./data/docx/题库/医学/10T电子书 超全/👑👑各类分类/书藉大合集/低幼到小学绘本1088本/112本绘本集+112教案/教案/鳄鱼怕怕牙医怕怕.doc
+./data/docx/题库/医学/10T电子书 超全/未分类/004 - 菜根阁整站电子书（123G）/04畅销书2万本（pdf txt doc chm）/1.世界顶级畅销书530本（Word）/中医基础理论（新世纪教材）.doc
+./data/docx/题库/医学/10T电子书 超全/未分类/世界顶级畅销书530本/一个学中医的女生写出的保养大法.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/06.妇产科学/中山大学妇产科超声15讲word文档资料（多图）/3 妊娠生理的超声诊断.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/06.妇产科学/中山大学妇产科超声15讲word文档资料（多图）/8 子宫体与子宫肌层病变的超声诊断.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/06.妇产科学/中山大学妇产科超声15讲word文档资料（多图）/13 外阴阴道病变与盆腔异物的超声诊断.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/06.妇产科学/中山大学妇产科超声15讲word文档资料（多图）/11 卵巢病变的超声诊断.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/06.妇产科学/中山大学妇产科超声15讲word文档资料（多图）/9 子宫腔与子宫内膜病变的超声诊断.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/06.妇产科学/中山大学妇产科超声15讲word文档资料（多图）/2 正常女性生殖器官的超声声像表现.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/06.妇产科学/中山大学妇产科超声15讲word文档资料（多图）/10 子宫颈病变的超声诊断.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/06.妇产科学/中山大学妇产科超声15讲word文档资料（多图）/6 胎儿附属结构异常的超声诊断.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/06.妇产科学/中山大学妇产科超声15讲word文档资料（多图）/5 先天性胎儿异常的超声诊断.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/06.妇产科学/中山大学妇产科超声15讲word文档资料（多图）/4 异常妊娠的超声诊断.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/06.妇产科学/中山大学妇产科超声15讲word文档资料（多图）/1 超声成像原理和妇产超声诊断临床基础.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/06.妇产科学/中山大学妇产科超声15讲word文档资料（多图）/15 妇产疾病超声诊断评价.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/06.妇产科学/中山大学妇产科超声15讲word文档资料（多图）/14 其他盆腔病变的超声诊断.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/06.妇产科学/中山大学妇产科超声15讲word文档资料（多图）/12 输卵管病变的超声诊断.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/CT/01.CT上岗证资料/CT上岗考试库/CT技师习题/CT技师上岗证模拟试题3.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/CT/01.CT上岗证资料/CT上岗考试库/CT技师习题/CT技师
+…</code></pre><p class="meta">输出已截断：此处显示前 2800 个字符，原文约 34317 个字符。完整内容请打开 GitHub 或 nbviewer 上的 notebook。</p>
+            </article>
+            <article class="nb-cell"><p class="nb-label">Markdown · 18</p><h1>在全部的范围中使用文件名推测</h1></article>
+            <article class="nb-cell">
+              <p class="nb-label">Code · 19 · In[144]</p>
+              <pre><code>def query_file_total_by_any_keywords(df, keywords: list|set, uninclude_keywords: list|set = []):
+    # keywords和uninclude_keywords可以被抽象理解成路径，如 &quot;/题库&quot;
+    # keywords: 只要一个出现在&quot;file_path&quot;中，就会被统计
+    # uninclude_keywords: 只要出现一个，就不会被统计
+
+    # 创建一个全为 False 的布尔系列，它将用于存储是否每个文件路径包含 keywords 中的任何一个
+    contains_any_keywords = pd.Series([False]*len(df))
+
+    # 检查文件路径是否包含 keywords 中的任何一个
+    for keyword in keywords:
+        contains_any_keywords = contains_any_keywords | df[&#x27;file_path&#x27;].fillna(&#x27;&#x27;).str.contains(keyword)
+
+    if uninclude_keywords:
+        # 检查文件路径是否包含 uninclude_keywords 中的任何一个
+        for keyword in uninclude_keywords:
+            contains_any_keywords = contains_any_keywords &amp; ~df[&#x27;file_path&#x27;].fillna(&#x27;&#x27;).str.contains(keyword)
+            
+    filtered_df = df.loc[contains_any_keywords]
+
+    return filtered_df</code></pre>
+              
+            </article>
+            <article class="nb-cell"><p class="nb-label">Markdown · 20</p><h1>寻找假阴性</h1></article>
+            <article class="nb-cell">
+              <p class="nb-label">Code · 21 · In[156]</p>
+              <pre><code>keywords = {&quot;真题&quot;, &quot;试卷&quot;, &quot;考试&quot;, &quot;答案&quot;}
+uninclude_keywords = {
+    &quot;/千套简历模板+简历指导+面试真题-求职加薪必备&quot;, 
+    &quot;申论&quot;, 
+    &quot;/培训体系&quot;, 
+    &quot;书法教案&quot;, 
+    &quot;讲课内文言文精讲&quot;,
+    &quot;/复习知识点&quot;, 
+    &quot;简历&quot;,
+    &quot;调查表&quot;,
+    &quot;理解技巧&quot;,
+    &quot;考试大纲&quot;,
+    &quot;/知识星球&quot;, # 这个文件中所有文件看文件名都是试卷，但是实际不是试卷
+}
+
+# 全部文件中file_name包含关键字的文件
+filtered_negative_file_df = query_file_total_by_any_keywords(negative_df, keywords, uninclude_keywords)
+for _, row in filtered_negative_file_df.iterrows():
+    print(row[&quot;file_path&quot;])
+filtered_negative_file_df</code></pre>
+              <pre class="nb-output"><code>./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年5月份更新】各类汇编/2023年5月份/每日更新/20230509/2023年员工（义务消防员）消防常识培训试卷（含答案）【官方抖音号：资深秘书】.docx
+./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年5月份更新】4400篇各类材料合集/2023年义务消防员培训试卷【官方抖音号：资深秘书】.docx
+./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年5月份更新】4400篇各类材料合集/2023年义务消防员消防常识培训题库（含答案）(1)【官方抖音号：资深秘书】.docx
+./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年5月份更新】4400篇各类材料合集/2023年义务消防员消防常识培训题库（含答案）【官方抖音号：资深秘书】.docx
+./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年5月份更新】4400篇各类材料合集/二十大党章知识测试题(答案后附)【官方抖音号：资深秘书】.docx
+./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年3月份更新】4700篇各类材料合集/（二十大学习材料）：党的二十大报告知识测试100题（含答案）【官方抖音号：资深秘书】.docx
+./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz9q/00：【2023年持续更新中】各类热点专题活动汇总/【2023年1月份更新】2700篇各类材料合集/（二十大学习材料）：党的二十大报告知识测试100题（含答案）【官方抖音号：资深秘书】.docx
+./data/docx/docx/20230408022940_VkyCtedYvW8CSN0V/05：各类别规范化写作模板资料/5、遴选资料/遴选备考四关键：热点、案例、写作、真题【官方抖音号：材料大师姐】.docx
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/CT/01.CT上岗证资料/CT上岗考试库/CT技师习题/CT技师上岗证模拟试题3.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/CT/01.CT上岗证资料/CT上岗考试库/CT技师习题/CT技师上岗考试试题3.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/CT/01.CT上岗证资料/CT上岗考试库/CT技师习题/CT技师上岗考试试题4.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/CT/01.CT上岗证资料/CT上岗考试库/CT技师习题/CT技师上岗考试试题.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/11.药学相关及药师考试/药师考试/药二冲刺讲义/yxzse_cc_jy1001.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/11.药学相关及药师考试/药师考试/药二冲刺讲义/yxzse_cc_jy0301.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/11.药学相关及药师考试/药师考试/药二冲刺讲义/yxzse_cc_jy0701.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/11.药学相关及药师考试/药师考试/药二冲刺讲义/yxzse_cc_jy0101.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/11.药学相关及药师考试/药师考试/药二冲刺讲义/yxzse_cc_jy0401.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/11.药学相关及药师考试/药师考试/药一冲刺讲义/yxzsy_cc_jy0501.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/11.药学相关及药师考试/药师考试/药一冲刺讲义/yxzsy_cc_jy0101.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/11.药学相关及药师考试/药师考试/药一冲刺讲义/yxzsy_cc_jy0801.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/11.药学相关及药师考试/药师考试/药一冲刺讲义/yxzsy_cc_jy1101.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/11.药学相关及药师考试/药师考试/药一冲刺讲义/yxzsy_cc_jy0601.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/11.药学相关及药师考试/药师考试/药一冲刺讲义/yxzsy_cc_jy0201.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/11.药学相关及药师考试/药师考试/药一冲刺讲义/yxzsy_cc_jy0701.doc
+./data/docx/题库/医学/Y 医学资料合集（包含20000部视频资料+100000部图书资料）/11.药学相关及药师考试/药师考试/药一冲刺讲义/yxzsy_cc_jy0301.doc
+./data/docx/题库/医学/Y 医学资
+…</code></pre><p class="meta">输出已截断：此处显示前 2800 个字符，原文约 50131 个字符。完整内容请打开 GitHub 或 nbviewer 上的 notebook。</p>
+<div class="nb-html-output"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>file_path</th>
+      <th>target_path</th>
+      <th>probability</th>
+      <th>type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>351</th>
+      <td>./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz...</td>
+      <td>./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz...</td>
+      <td>2.787719e-03</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>669</th>
+      <td>./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz...</td>
+      <td>./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz...</td>
+      <td>4.402724e-03</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>695</th>
+      <td>./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz...</td>
+      <td>./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz...</td>
+      <td>1.936887e-03</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>717</th>
+      <td>./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz...</td>
+      <td>./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz...</td>
+      <td>1.936887e-03</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>731</th>
+      <td>./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz...</td>
+      <td>./data/docx/docx/20230608002026_mXLQ2nPH8g-jnz...</td>
+      <td>3.764461e-04</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>59516</th>
+      <td>./data/docx/202306/考研考试/B2023历史教育计算机/7月一次更新/01...</td>
+      <td>./data/docx/202306/考研考试/B2023历史教育计算机/7月一次更新/01...</td>
+      <td>7.294311e-09</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>59563</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>1.823276e-03</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>59564</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>1.207746e-04</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>59569</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>5.172276e-02</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>59571</th>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>./data/docx/202306/2023全网考研资料免费分享/考研资料小合集考研资料小...</td>
+      <td>5.172276e-02</td>
+      <td>NaN</td>
+    </tr>
+  </tbody>
+</table>
+<p>389 rows × 4 columns</p>
+</div></div>
+            </article>
+            <article class="nb-cell"><p class="nb-label">Markdown · 22</p><h1>寻找假阳性</h1></article>
+            <article class="nb-cell">
+              <p class="nb-label">Code · 23 · In[157]</p>
+              <pre><code># 查找以下关键字都不在路径中存在的
+not_required_keywords = {
+    &quot;试卷&quot;, 
+    &quot;考试&quot;, 
+    &quot;答案&quot;, 
+    &quot;高中&quot;, 
+    &quot;初中&quot;,
+    &quot;公考遴选&quot;, 
+    &quot;奥数&quot;, 
+    &quot;单元测试&quot;,
+    &quot;原卷&quot;,
+    &quot;解析版&quot;,
+    &quot;/练习&quot;,
+    &quot;题&quot;
+}
+
+filtered_positive_file_df = query_file_total_by_any_keywords(positive_df, {&quot;/&quot;}, not_required_keywords)
+for _, row in filtered_positive_file_df.iterrows():
+    print(row[&quot;file_path&quot;])</code></pre>
+              <pre class="nb-output"><code>./data/docx/docx/20230408022940_VkyCtedYvW8CSN0V/05：各类别规范化写作模板资料/9、写作素材/【语句类】30个形容人格与品德金句【官方抖音号：材料大师姐】.docx
+./data/docx/doc/20230408013313_-Hac8mgUfD0Rhaa7/01：【核心推荐】公文写作高手实用素材库（写作素材、模板和范文等）/55：写材料高手实用素材合集（含附赠）/《公文写作高手必备工具箱》/16常见公文批示用语集锦.doc
+./data/docx/doc/20230408024631_Unct5uGvDbjAOzFp/08：2000份各类合同范本大全/02.100份市场营销必备工具表格/第三篇 人力资源管理及企业文化/第八章：企业文化咨询工具【官方抖音号：材料大师姐】.doc
+./data/docx/doc/20230408024631_Unct5uGvDbjAOzFp/08：2000份各类合同范本大全/01.2000份各类合同范本大全/20其它合同/实习协议书【官方抖音号：材料大师姐】.doc
+</code></pre>
+            </article>
+            
+    
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p><strong>本站是静态文档 / 结果展示</strong>，不是可交互运行时，也不会重新训练或分类文件。</p>
+      <p>说明只依据仓库内 README、脚本、Markdown 与 5 份已保存输出的 notebook；未写入仓库的数据集规模、用户数或未保存成绩均不在此编造。</p>
+      <nav class="footer-nav" aria-label="页脚">
+        <a href="../index.html">首页</a>
+        <a href="../pipeline.html">处理流程</a>
+        <a href="../usage.html">代码使用</a>
+        <a href="../notebooks.html">实验记录</a>
+        <a href="../results.html">记录结果</a>
+        <a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc">GitHub 仓库</a>
+        <a href="https://github.com/UnstoppableCurry/Exam-Question-Bank-Dataset-zh_mnbvc/blob/main/LICENSE">MIT License</a>
+      </nav>
+      <p class="meta">Copyright (c) 2023 UnstoppableCurry · 预定发布地址 https://unstoppablecurry.github.io/Exam-Question-Bank-Dataset-zh_mnbvc/</p>
+    </div>
+  </footer>
+  <script src="../assets/site.js" defer></script>
+</body>
+</html>
